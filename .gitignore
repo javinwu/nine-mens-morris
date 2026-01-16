@@ -1,0 +1,27 @@
+
+#Elm
+elm-stuff/
+elm.js
+
+#Build output
+public/elm.js
+
+#OS files
+.DS_Store
+*~
+.directory
+
+#Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+#Logs
+*.Logs
+npm-debug.log*
+
+#Temporary files
+.tmp/
+temp/

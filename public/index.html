@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nine Men's Morris</title>
+    
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <!-- Elm app will mount here -->
+    <div id="app"></div>
+    
+    <!-- Elm compiled JavaScript -->
+    <script src="../elm.js"></script>
+    
+    <script>
+        // Initialize Elm app
+        var app = Elm.Main.init({
+            node: document.getElementById('app')
+        });
+        
+        // Setup for sound effects (we'll add this later)
+        if (app.ports && app.ports.playSound) {
+            app.ports.playSound.subscribe(function(soundFile) {
+                var audio = new Audio(soundFile);
+                audio.play().catch(function(error) {
+                    console.log("Audio play failed:", error);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
