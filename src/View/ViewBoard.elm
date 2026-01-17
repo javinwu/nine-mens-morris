@@ -26,6 +26,10 @@ boardPositions =
     , (150, 200)
     ]
 
+positionToCoordinates : Int -> Maybe (Int, Int)
+positionToCoordinates pos = 
+    List.drop pos boardPositions
+        |> List.head
 
 {-| Creates a circle at the given position
 -}
@@ -42,15 +46,15 @@ positionCircle (x, y) =
         []
 
 
-{-| Renders the Nine Men's Morris game board
+    {-Renders the Nine Men's Morris game board
     The board has 24 positions arranged in 3 concentric squares
     Players place pieces on the intersection points (circles)
--}
+    -}
 viewBoard : Html msg
 viewBoard =
     svg
         [ class "w-full h-auto"  -- constrained responsive sizing
-        , viewBox "0 0 600 600"  -- defines the coordinate system
+        , viewBox "0 0 500 500"  -- defines the coordinate system
         ]
         ([ -- Outer square - the largest ring with 8 positions
            line [ x1 "50", y1 "50", x2 "350", y2 "50", stroke "black", strokeWidth "2" ] []  -- top edge
