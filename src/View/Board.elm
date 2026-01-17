@@ -12,7 +12,7 @@ import Svg.Attributes exposing (class, viewBox, x1, y1, x2, y2, cx, cy, r, strok
 viewBoard : Html msg
 viewBoard =
     svg
-        [ class "w-full h-full max-w-2xl mx-auto"  -- responsive sizing with Tailwind
+        [ class "w-full h-full max-w-lg mx-auto"  -- responsive sizing with Tailwind
         , viewBox "0 0 400 400"  -- idk needed
         ]
         [ -- Outer square - the largest ring with 8 positions
@@ -21,7 +21,7 @@ viewBoard =
         , line [ x1 "350", y1 "350", x2 "50", y2 "350", stroke "black", strokeWidth "2" ] []  -- bottom edge
         , line [ x1 "50", y1 "350", x2 "50", y2 "50", stroke "black", strokeWidth "2" ] []  -- left edge
 
-        -- Middle square - second ring with 8 positions
+        -- Middle square - second ring with 8 pclositions
         , line [ x1 "100", y1 "100", x2 "300", y2 "100", stroke "black", strokeWidth "2" ] []  -- top
         , line [ x1 "300", y1 "100", x2 "300", y2 "300", stroke "black", strokeWidth "2" ] []  -- right
         , line [ x1 "300", y1 "300", x2 "100", y2 "300", stroke "black", strokeWidth "2" ] []  -- bottom
