@@ -2,6 +2,8 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (Html, div, text)
+import Html.Attributes
+import View.Board exposing (viewBoard)
 
 
 -- MODEL
@@ -30,7 +32,8 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div [] []
+    div [ Html.Attributes.class "min-h-screen bg-gray-100 flex items-center justify-center p-8" ]
+        [ viewBoard ]
 
 
 -- MAIN
