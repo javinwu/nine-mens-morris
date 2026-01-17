@@ -5481,7 +5481,7 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('w-full max-w-xs')
+						$elm$html$Html$Attributes$class('w-full max-w-sm max-h-[90vh] aspect-square')
 					]),
 				_List_fromArray(
 					[$author$project$View$ViewBoard$viewBoard]))

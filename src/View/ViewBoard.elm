@@ -5,7 +5,7 @@ import Svg exposing (Svg, svg, line, circle)
 import Svg.Attributes exposing (class, viewBox, x1, y1, x2, y2, cx, cy, r, stroke, strokeWidth, fill)
 
 
-{-| All 24 board positions as (x, y) coordinates
+{- All 24 board positions as (x, y) coordinates
 -}
 boardPositions : List (Int, Int)
 boardPositions =
@@ -49,8 +49,8 @@ positionCircle (x, y) =
 viewBoard : Html msg
 viewBoard =
     svg
-        [ class "w-full h-auto"  -- responsive sizing with Tailwind
-        , viewBox "0 0 400 400"  -- defines the coordinate system
+        [ class "w-full h-auto"  -- constrained responsive sizing
+        , viewBox "0 0 600 600"  -- defines the coordinate system
         ]
         ([ -- Outer square - the largest ring with 8 positions
            line [ x1 "50", y1 "50", x2 "350", y2 "50", stroke "black", strokeWidth "2" ] []  -- top edge
@@ -79,4 +79,4 @@ viewBoard =
          -- White circles show where players can place their pieces
          -- These are at all the line intersections (24 total)
          ++ List.map positionCircle boardPositions
-        )
+        ) 
