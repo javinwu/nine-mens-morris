@@ -2,7 +2,7 @@ module Board exposing (..)
 
 import Types exposing (Piece)
 import Types exposing (Color)
-import Types exposing (Color(..))
+-- import Types exposing (Color(..))
 
 pieces : List (Maybe Piece)
 pieces
@@ -27,9 +27,10 @@ getAdjacencies piece =
     |> List.head
     |> Maybe.withDefault []
 
-getPieceAt : Int -> Maybe Piece
+getPieceAt : Int -> Maybe Color
 getPieceAt position =
   pieces
     |> List.drop position
     |> List.head
     |> Maybe.andThen identity
+    |> Maybe.map .color

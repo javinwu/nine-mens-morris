@@ -23,6 +23,8 @@ type alias GameState =
   , phase : GamePhase
   , whitePiecesPlaced : Int
   , blackPiecesPlaced : Int
+  , whitePiecesLeft : Int
+  , blackPiecesLeft : Int
   }
 
 type GamePhase
