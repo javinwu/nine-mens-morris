@@ -11,12 +11,16 @@ import Board exposing (getPieceAt)
 
 
 -- MODEL
+
+-- The main application state
+-- Contains the game board and current game state
 type alias Model =
     { board : Board
     , gameState : GameState
     }
 
 
+-- Initialize a new game with an empty board
 init : Model
 init =
     { board = emptyBoard
@@ -25,14 +29,18 @@ init =
 
 
 -- MESSAGES
+
+-- All possible user actions in the game
 type Msg
-    = ClickedPosition Position
-    | ClickedPiece Position
-    | NewGame
-    | NoOp
+    = ClickedPosition Position  -- User clicked an empty board position
+    | ClickedPiece Position     -- User clicked an existing piece
+    | NewGame                   -- User wants to reset the game
+    | NoOp                      -- No operation (placeholder)
 
 
 -- UPDATE
+
+-- Handle user actions and update the game state accordingly
 update : Msg -> Model -> Model
 update msg model =
     case msg of
@@ -91,7 +99,10 @@ update msg model =
             model
 
 
--- Helper to convert Board to List of Pieces
+-- HELPER FUNCTIONS
+
+-- Convert the board (list of Maybe Piece) into a list of actual pieces
+-- Filters out empty positions
 boardToPieces : Board -> List Piece
 boardToPieces board =
     board
@@ -101,13 +112,14 @@ boardToPieces board =
         |> List.filterMap identity
 
 
--- Validation helpers
+-- Get all pieces on the board that belong to a specific player
 getPiecesForPlayer : Color -> Board -> List Piece
 getPiecesForPlayer color board =
     boardToPieces board
         |> List.filter (\piece -> piece.color == color)
 
 
+-- Check if a player can still place pieces (max 9 per player)
 canPlacePiece : Color -> GameState -> Bool
 canPlacePiece color gameState =
     let
@@ -119,6 +131,7 @@ canPlacePiece color gameState =
     piecesPlaced < 9
 
 
+-- Place a piece of the given color at the specified position on the board
 placePiece : Int -> Color -> Board -> Board
 placePiece pos color board =
     List.indexedMap
@@ -131,6 +144,7 @@ placePiece pos color board =
         board
 
 
+-- Switch to the other player (White -> Black or Black -> White)
 nextPlayer : Color -> Color
 nextPlayer color =
     case color of
@@ -139,6 +153,8 @@ nextPlayer color =
 
 
 -- VIEW
+
+-- Render the game UI: current player display, game board, and reset button
 view : Model -> Html Msg
 view model =
     div [ class "min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8" ]
@@ -159,6 +175,9 @@ view model =
         ]
 
 
+-- MAIN
+
+-- Application entry point - sets up the Elm architecture (init, view, update)
 main : Program () Model Msg
 main =
     Browser.sandbox
