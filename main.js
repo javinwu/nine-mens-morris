@@ -80,271 +80,6 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 console.warn('Compiled in DEV mode. Follow the advice at https://elm-lang.org/0.19.1/optimize for better performance and smaller assets.');
 
 
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	/**/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = $elm$core$Set$toList(x);
-		y = $elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = $elm$core$Dict$toList(x);
-		y = $elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**_UNUSED/
-	if (x.$ < 0)
-	{
-		x = $elm$core$Dict$toList(x);
-		y = $elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**_UNUSED/
-	if (typeof x.$ === 'undefined')
-	//*/
-	/**/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? $elm$core$Basics$LT : n ? $elm$core$Basics$GT : $elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
-
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === $elm$core$Basics$EQ ? 0 : ord === $elm$core$Basics$LT ? -1 : 1;
-	}));
-});
-
-
-
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -790,6 +525,271 @@ function _Debug_regionToString(region)
 	}
 	return 'on lines ' + region.start.line + ' through ' + region.end.line;
 }
+
+
+
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = $elm$core$Set$toList(x);
+		y = $elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? $elm$core$Basics$LT : n ? $elm$core$Basics$GT : $elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === $elm$core$Basics$EQ ? 0 : ord === $elm$core$Basics$LT ? -1 : 1;
+	}));
+});
 
 
 
@@ -4378,11 +4378,32 @@ function _Browser_load(url)
 		}
 	}));
 }
-var $author$project$Main$init = {};
-var $elm$core$Basics$EQ = {$: 'EQ'};
-var $elm$core$Basics$GT = {$: 'GT'};
-var $elm$core$Basics$LT = {$: 'LT'};
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$List$cons = _List_cons;
+var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var $elm$core$Array$foldr = F3(
+	function (func, baseCase, _v0) {
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			$elm$core$Elm$JsArray$foldr,
+			helper,
+			A3($elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
+	});
+var $elm$core$Array$toList = function (array) {
+	return A3($elm$core$Array$foldr, $elm$core$List$cons, _List_Nil, array);
+};
 var $elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
@@ -4435,30 +4456,37 @@ var $elm$core$Set$toList = function (_v0) {
 	var dict = _v0.a;
 	return $elm$core$Dict$keys(dict);
 };
-var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var $elm$core$Array$foldr = F3(
-	function (func, baseCase, _v0) {
-		var tree = _v0.c;
-		var tail = _v0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3($elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			$elm$core$Elm$JsArray$foldr,
-			helper,
-			A3($elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
+var $elm$core$Basics$EQ = {$: 'EQ'};
+var $elm$core$Basics$GT = {$: 'GT'};
+var $elm$core$Basics$LT = {$: 'LT'};
+var $elm$core$Basics$le = _Utils_le;
+var $elm$core$Basics$sub = _Basics_sub;
+var $elm$core$List$repeatHelp = F3(
+	function (result, n, value) {
+		repeatHelp:
+		while (true) {
+			if (n <= 0) {
+				return result;
+			} else {
+				var $temp$result = A2($elm$core$List$cons, value, result),
+					$temp$n = n - 1,
+					$temp$value = value;
+				result = $temp$result;
+				n = $temp$n;
+				value = $temp$value;
+				continue repeatHelp;
+			}
+		}
 	});
-var $elm$core$Array$toList = function (array) {
-	return A3($elm$core$Array$foldr, $elm$core$List$cons, _List_Nil, array);
-};
+var $elm$core$List$repeat = F2(
+	function (n, value) {
+		return A3($elm$core$List$repeatHelp, _List_Nil, n, value);
+	});
+var $author$project$Types$emptyBoard = A2($elm$core$List$repeat, 24, $elm$core$Maybe$Nothing);
+var $author$project$Types$Placement = {$: 'Placement'};
+var $author$project$Types$White = {$: 'White'};
+var $author$project$Types$initialGameState = {blackPiecesPlaced: 0, currentPlayer: $author$project$Types$White, phase: $author$project$Types$Placement, selectedPiece: $elm$core$Maybe$Nothing, whitePiecesPlaced: 0};
+var $author$project$Main$init = {board: $author$project$Types$emptyBoard, gameState: $author$project$Types$initialGameState};
 var $elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
 };
@@ -4485,7 +4513,6 @@ var $elm$core$Basics$add = _Basics_add;
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
-var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$all = _String_all;
 var $elm$core$Basics$and = _Basics_and;
 var $elm$core$Basics$append = _Utils_append;
@@ -4539,8 +4566,6 @@ var $elm$core$List$length = function (xs) {
 		xs);
 };
 var $elm$core$List$map2 = _List_map2;
-var $elm$core$Basics$le = _Utils_le;
-var $elm$core$Basics$sub = _Basics_sub;
 var $elm$core$List$rangeHelp = F3(
 	function (lo, hi, list) {
 		rangeHelp:
@@ -5189,10 +5214,192 @@ var $elm$browser$Browser$sandbox = function (impl) {
 			view: impl.view
 		});
 };
+var $author$project$Main$canPlacePiece = F2(
+	function (color, gameState) {
+		var piecesPlaced = function () {
+			if (color.$ === 'White') {
+				return gameState.whitePiecesPlaced;
+			} else {
+				return gameState.blackPiecesPlaced;
+			}
+		}();
+		return piecesPlaced < 9;
+	});
+var $elm$core$Maybe$andThen = F2(
+	function (callback, maybeValue) {
+		if (maybeValue.$ === 'Just') {
+			var value = maybeValue.a;
+			return callback(value);
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
+var $author$project$Board$getPieceAt = F2(
+	function (position, board) {
+		return A2(
+			$elm$core$Maybe$andThen,
+			$elm$core$Basics$identity,
+			$elm$core$List$head(
+				A2($elm$core$List$drop, position, board)));
+	});
+var $author$project$Types$Black = {$: 'Black'};
+var $author$project$Main$nextPlayer = function (color) {
+	if (color.$ === 'White') {
+		return $author$project$Types$Black;
+	} else {
+		return $author$project$Types$White;
+	}
+};
+var $author$project$Main$placePiece = F3(
+	function (pos, color, board) {
+		return A2(
+			$elm$core$List$indexedMap,
+			F2(
+				function (index, maybePiece) {
+					return _Utils_eq(index, pos) ? $elm$core$Maybe$Just(
+						{color: color, position: pos}) : maybePiece;
+				}),
+			board);
+	});
 var $author$project$Main$update = F2(
 	function (msg, model) {
-		return model;
+		switch (msg.$) {
+			case 'ClickedPiece':
+				var pos = msg.a;
+				var newGameState = model.gameState;
+				var updatedGameState = _Utils_update(
+					newGameState,
+					{
+						selectedPiece: $elm$core$Maybe$Just(pos)
+					});
+				return _Utils_update(
+					model,
+					{gameState: updatedGameState});
+			case 'ClickedPosition':
+				var pos = msg.a;
+				if (_Utils_eq(model.gameState.phase, $author$project$Types$Placement)) {
+					var currentPlayer = model.gameState.currentPlayer;
+					if (_Utils_eq(
+						A2($author$project$Board$getPieceAt, pos, model.board),
+						$elm$core$Maybe$Nothing) && A2($author$project$Main$canPlacePiece, currentPlayer, model.gameState)) {
+						var newBoard = A3($author$project$Main$placePiece, pos, currentPlayer, model.board);
+						var _v1 = function () {
+							if (currentPlayer.$ === 'White') {
+								return _Utils_Tuple2(model.gameState.whitePiecesPlaced + 1, model.gameState.blackPiecesPlaced);
+							} else {
+								return _Utils_Tuple2(model.gameState.whitePiecesPlaced, model.gameState.blackPiecesPlaced + 1);
+							}
+						}();
+						var newWhiteCount = _v1.a;
+						var newBlackCount = _v1.b;
+						var newGameState = {
+							blackPiecesPlaced: newBlackCount,
+							currentPlayer: $author$project$Main$nextPlayer(currentPlayer),
+							phase: $author$project$Types$Placement,
+							selectedPiece: $elm$core$Maybe$Nothing,
+							whitePiecesPlaced: newWhiteCount
+						};
+						return _Utils_update(
+							model,
+							{board: newBoard, gameState: newGameState});
+					} else {
+						return model;
+					}
+				} else {
+					var newGameState = model.gameState;
+					var updatedGameState = _Utils_update(
+						newGameState,
+						{selectedPiece: $elm$core$Maybe$Nothing});
+					return _Utils_update(
+						model,
+						{gameState: updatedGameState});
+				}
+			case 'NewGame':
+				return $author$project$Main$init;
+			default:
+				return model;
+		}
 	});
+var $author$project$Main$ClickedPosition = function (a) {
+	return {$: 'ClickedPosition', a: a};
+};
+var $author$project$Main$NewGame = {$: 'NewGame'};
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$Main$boardToPieces = function (board) {
+	return A2(
+		$elm$core$List$filterMap,
+		$elm$core$Basics$identity,
+		A2(
+			$elm$core$List$indexedMap,
+			F2(
+				function (index, maybePiece) {
+					return A2(
+						$elm$core$Maybe$map,
+						function (piece) {
+							return piece;
+						},
+						maybePiece);
+				}),
+			board));
+};
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
@@ -5203,7 +5410,33 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
-var $author$project$View$ViewBoard$boardPositions = _List_fromArray(
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $author$project$Types$playerToString = function (color) {
+	if (color.$ === 'White') {
+		return 'White';
+	} else {
+		return 'Black';
+	}
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$BoardData$boardPositions = _List_fromArray(
 	[
 		_Utils_Tuple2(50, 50),
 		_Utils_Tuple2(200, 50),
@@ -5231,249 +5464,331 @@ var $author$project$View$ViewBoard$boardPositions = _List_fromArray(
 		_Utils_Tuple2(150, 200)
 	]);
 var $elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
+var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
+var $elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
 var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$line = $elm$svg$Svg$trustedNode('line');
 var $elm$svg$Svg$circle = $elm$svg$Svg$trustedNode('circle');
 var $elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
 var $elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
-var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
+var $elm$svg$Svg$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
 var $elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
 var $elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
 var $elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
-var $author$project$View$ViewBoard$positionCircle = function (_v0) {
-	var x = _v0.a;
-	var y = _v0.b;
-	return A2(
-		$elm$svg$Svg$circle,
-		_List_fromArray(
-			[
-				$elm$svg$Svg$Attributes$cx(
-				$elm$core$String$fromInt(x)),
-				$elm$svg$Svg$Attributes$cy(
-				$elm$core$String$fromInt(y)),
-				$elm$svg$Svg$Attributes$r('8'),
-				$elm$svg$Svg$Attributes$fill('white'),
-				$elm$svg$Svg$Attributes$stroke('black'),
-				$elm$svg$Svg$Attributes$strokeWidth('2')
-			]),
-		_List_Nil);
-};
+var $elm$svg$Svg$Attributes$style = _VirtualDom_attribute('style');
+var $author$project$View$ViewBoard$positionCircle = F3(
+	function (index, _v0, onClickMsg) {
+		var x = _v0.a;
+		var y = _v0.b;
+		return A2(
+			$elm$svg$Svg$circle,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$cx(
+					$elm$core$String$fromInt(x)),
+					$elm$svg$Svg$Attributes$cy(
+					$elm$core$String$fromInt(y)),
+					$elm$svg$Svg$Attributes$r('8'),
+					$elm$svg$Svg$Attributes$fill('#D4A574'),
+					$elm$svg$Svg$Attributes$stroke('#8B4513'),
+					$elm$svg$Svg$Attributes$strokeWidth('2'),
+					$elm$svg$Svg$Events$onClick(
+					onClickMsg(index)),
+					$elm$svg$Svg$Attributes$style('cursor: pointer;')
+				]),
+			_List_Nil);
+	});
+var $elm$svg$Svg$rect = $elm$svg$Svg$trustedNode('rect');
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
 var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
+var $author$project$View$Piece$pieceStroke = function (color) {
+	if (color.$ === 'White') {
+		return _List_Nil;
+	} else {
+		return _List_fromArray(
+			[
+				$elm$svg$Svg$Attributes$stroke('black'),
+				$elm$svg$Svg$Attributes$strokeWidth('2')
+			]);
+	}
+};
+var $author$project$View$Piece$playerColor = function (color) {
+	if (color.$ === 'White') {
+		return 'white';
+	} else {
+		return 'black';
+	}
+};
+var $author$project$BoardData$positionToCoordinates = function (pos) {
+	return $elm$core$List$head(
+		A2($elm$core$List$drop, pos, $author$project$BoardData$boardPositions));
+};
+var $author$project$View$Piece$viewPiece = function (piece) {
+	return A2(
+		$elm$core$Maybe$map,
+		function (_v0) {
+			var x = _v0.a;
+			var y = _v0.b;
+			return A2(
+				$elm$svg$Svg$circle,
+				_Utils_ap(
+					_List_fromArray(
+						[
+							$elm$svg$Svg$Attributes$cx(
+							$elm$core$String$fromInt(x)),
+							$elm$svg$Svg$Attributes$cy(
+							$elm$core$String$fromInt(y)),
+							$elm$svg$Svg$Attributes$r('9'),
+							$elm$svg$Svg$Attributes$fill(
+							$author$project$View$Piece$playerColor(piece.color))
+						]),
+					$author$project$View$Piece$pieceStroke(piece.color)),
+				_List_Nil);
+		},
+		$author$project$BoardData$positionToCoordinates(piece.position));
+};
+var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var $elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
 var $elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
 var $elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
 var $elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
-var $author$project$View$ViewBoard$viewBoard = A2(
-	$elm$svg$Svg$svg,
-	_List_fromArray(
-		[
-			$elm$svg$Svg$Attributes$class('w-full h-auto'),
-			$elm$svg$Svg$Attributes$viewBox('0 0 400 400')
-		]),
-	_Utils_ap(
-		_List_fromArray(
-			[
-				A2(
-				$elm$svg$Svg$line,
+var $author$project$View$ViewBoard$viewBoard = F2(
+	function (pieces, onPositionClick) {
+		return A2(
+			$elm$svg$Svg$svg,
+			_List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$class('w-full h-auto'),
+					$elm$svg$Svg$Attributes$viewBox('0 0 500 500')
+				]),
+			_Utils_ap(
 				_List_fromArray(
 					[
-						$elm$svg$Svg$Attributes$x1('50'),
-						$elm$svg$Svg$Attributes$y1('50'),
-						$elm$svg$Svg$Attributes$x2('350'),
-						$elm$svg$Svg$Attributes$y2('50'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
+						A2(
+						$elm$svg$Svg$rect,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('0'),
+								$elm$svg$Svg$Attributes$y1('0'),
+								$elm$svg$Svg$Attributes$width('500'),
+								$elm$svg$Svg$Attributes$height('500'),
+								$elm$svg$Svg$Attributes$fill('#b5814aff')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('50'),
+								$elm$svg$Svg$Attributes$y1('50'),
+								$elm$svg$Svg$Attributes$x2('350'),
+								$elm$svg$Svg$Attributes$y2('50'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('350'),
+								$elm$svg$Svg$Attributes$y1('50'),
+								$elm$svg$Svg$Attributes$x2('350'),
+								$elm$svg$Svg$Attributes$y2('350'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('350'),
+								$elm$svg$Svg$Attributes$y1('350'),
+								$elm$svg$Svg$Attributes$x2('50'),
+								$elm$svg$Svg$Attributes$y2('350'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('50'),
+								$elm$svg$Svg$Attributes$y1('350'),
+								$elm$svg$Svg$Attributes$x2('50'),
+								$elm$svg$Svg$Attributes$y2('50'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('100'),
+								$elm$svg$Svg$Attributes$y1('100'),
+								$elm$svg$Svg$Attributes$x2('300'),
+								$elm$svg$Svg$Attributes$y2('100'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('300'),
+								$elm$svg$Svg$Attributes$y1('100'),
+								$elm$svg$Svg$Attributes$x2('300'),
+								$elm$svg$Svg$Attributes$y2('300'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('300'),
+								$elm$svg$Svg$Attributes$y1('300'),
+								$elm$svg$Svg$Attributes$x2('100'),
+								$elm$svg$Svg$Attributes$y2('300'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('100'),
+								$elm$svg$Svg$Attributes$y1('300'),
+								$elm$svg$Svg$Attributes$x2('100'),
+								$elm$svg$Svg$Attributes$y2('100'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('150'),
+								$elm$svg$Svg$Attributes$y1('150'),
+								$elm$svg$Svg$Attributes$x2('250'),
+								$elm$svg$Svg$Attributes$y2('150'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('250'),
+								$elm$svg$Svg$Attributes$y1('150'),
+								$elm$svg$Svg$Attributes$x2('250'),
+								$elm$svg$Svg$Attributes$y2('250'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('250'),
+								$elm$svg$Svg$Attributes$y1('250'),
+								$elm$svg$Svg$Attributes$x2('150'),
+								$elm$svg$Svg$Attributes$y2('250'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('150'),
+								$elm$svg$Svg$Attributes$y1('250'),
+								$elm$svg$Svg$Attributes$x2('150'),
+								$elm$svg$Svg$Attributes$y2('150'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('200'),
+								$elm$svg$Svg$Attributes$y1('50'),
+								$elm$svg$Svg$Attributes$x2('200'),
+								$elm$svg$Svg$Attributes$y2('150'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('350'),
+								$elm$svg$Svg$Attributes$y1('200'),
+								$elm$svg$Svg$Attributes$x2('250'),
+								$elm$svg$Svg$Attributes$y2('200'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('200'),
+								$elm$svg$Svg$Attributes$y1('350'),
+								$elm$svg$Svg$Attributes$x2('200'),
+								$elm$svg$Svg$Attributes$y2('250'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil),
+						A2(
+						$elm$svg$Svg$line,
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$x1('50'),
+								$elm$svg$Svg$Attributes$y1('200'),
+								$elm$svg$Svg$Attributes$x2('150'),
+								$elm$svg$Svg$Attributes$y2('200'),
+								$elm$svg$Svg$Attributes$stroke('#8B4513'),
+								$elm$svg$Svg$Attributes$strokeWidth('3')
+							]),
+						_List_Nil)
 					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('350'),
-						$elm$svg$Svg$Attributes$y1('50'),
-						$elm$svg$Svg$Attributes$x2('350'),
-						$elm$svg$Svg$Attributes$y2('350'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('350'),
-						$elm$svg$Svg$Attributes$y1('350'),
-						$elm$svg$Svg$Attributes$x2('50'),
-						$elm$svg$Svg$Attributes$y2('350'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('50'),
-						$elm$svg$Svg$Attributes$y1('350'),
-						$elm$svg$Svg$Attributes$x2('50'),
-						$elm$svg$Svg$Attributes$y2('50'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('100'),
-						$elm$svg$Svg$Attributes$y1('100'),
-						$elm$svg$Svg$Attributes$x2('300'),
-						$elm$svg$Svg$Attributes$y2('100'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('300'),
-						$elm$svg$Svg$Attributes$y1('100'),
-						$elm$svg$Svg$Attributes$x2('300'),
-						$elm$svg$Svg$Attributes$y2('300'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('300'),
-						$elm$svg$Svg$Attributes$y1('300'),
-						$elm$svg$Svg$Attributes$x2('100'),
-						$elm$svg$Svg$Attributes$y2('300'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('100'),
-						$elm$svg$Svg$Attributes$y1('300'),
-						$elm$svg$Svg$Attributes$x2('100'),
-						$elm$svg$Svg$Attributes$y2('100'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('150'),
-						$elm$svg$Svg$Attributes$y1('150'),
-						$elm$svg$Svg$Attributes$x2('250'),
-						$elm$svg$Svg$Attributes$y2('150'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('250'),
-						$elm$svg$Svg$Attributes$y1('150'),
-						$elm$svg$Svg$Attributes$x2('250'),
-						$elm$svg$Svg$Attributes$y2('250'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('250'),
-						$elm$svg$Svg$Attributes$y1('250'),
-						$elm$svg$Svg$Attributes$x2('150'),
-						$elm$svg$Svg$Attributes$y2('250'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('150'),
-						$elm$svg$Svg$Attributes$y1('250'),
-						$elm$svg$Svg$Attributes$x2('150'),
-						$elm$svg$Svg$Attributes$y2('150'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('200'),
-						$elm$svg$Svg$Attributes$y1('50'),
-						$elm$svg$Svg$Attributes$x2('200'),
-						$elm$svg$Svg$Attributes$y2('150'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('350'),
-						$elm$svg$Svg$Attributes$y1('200'),
-						$elm$svg$Svg$Attributes$x2('250'),
-						$elm$svg$Svg$Attributes$y2('200'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('200'),
-						$elm$svg$Svg$Attributes$y1('350'),
-						$elm$svg$Svg$Attributes$x2('200'),
-						$elm$svg$Svg$Attributes$y2('250'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil),
-				A2(
-				$elm$svg$Svg$line,
-				_List_fromArray(
-					[
-						$elm$svg$Svg$Attributes$x1('50'),
-						$elm$svg$Svg$Attributes$y1('200'),
-						$elm$svg$Svg$Attributes$x2('150'),
-						$elm$svg$Svg$Attributes$y2('200'),
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
-					]),
-				_List_Nil)
-			]),
-		A2($elm$core$List$map, $author$project$View$ViewBoard$positionCircle, $author$project$View$ViewBoard$boardPositions)));
+				_Utils_ap(
+					A2(
+						$elm$core$List$indexedMap,
+						F2(
+							function (index, pos) {
+								return A3($author$project$View$ViewBoard$positionCircle, index, pos, onPositionClick);
+							}),
+						$author$project$BoardData$boardPositions),
+					A2($elm$core$List$filterMap, $author$project$View$Piece$viewPiece, pieces))));
+	});
 var $author$project$Main$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				$elm$html$Html$Attributes$class('min-h-screen bg-gray-100 flex items-center justify-center p-4')
+				$elm$html$Html$Attributes$class('min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8')
 			]),
 		_List_fromArray(
 			[
@@ -5481,10 +5796,28 @@ var $author$project$Main$view = function (model) {
 				$elm$html$Html$div,
 				_List_fromArray(
 					[
-						$elm$html$Html$Attributes$class('w-full max-w-sm max-h-[90vh] aspect-square')
+						$elm$html$Html$Attributes$class('text-white text-2xl mb-8')
 					]),
 				_List_fromArray(
-					[$author$project$View$ViewBoard$viewBoard]))
+					[
+						$elm$html$Html$text(
+						'Current Player: ' + $author$project$Types$playerToString(model.gameState.currentPlayer))
+					])),
+				A2(
+				$author$project$View$ViewBoard$viewBoard,
+				$author$project$Main$boardToPieces(model.board),
+				$author$project$Main$ClickedPosition),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors'),
+						$elm$html$Html$Events$onClick($author$project$Main$NewGame)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Game Reset')
+					]))
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$sandbox(

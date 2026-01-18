@@ -5,8 +5,9 @@ import Html exposing (Html, div, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Svg exposing (Svg)
-import Types exposing (Piece, Color(..))
+import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
+import Board exposing (getPieceAt)
 
 
 -- MODEL
@@ -52,8 +53,7 @@ update msg model =
                     currentPlayer = model.gameState.currentPlayer
                 in
                 -- Check if position is empty and player can place
-                -- TODO: Replace True with: getPieceAt pos model.board == Nothing
-                if True && canPlacePiece currentPlayer model.gameState then
+                if getPieceAt pos model.board == Nothing && canPlacePiece currentPlayer model.gameState then
                     let
                         -- Place the piece
                         newBoard = placePiece pos currentPlayer model.board
