@@ -46,6 +46,8 @@ initialGameState =
   , phase = Placement
   , whitePiecesPlaced = 0
   , blackPiecesPlaced = 0
+  , whitePiecesLeft = 9
+  , blackPiecesLeft = 9
   }
 
 playerToString : Color -> String

@@ -33,4 +33,3 @@ getPieceAt position board =
     |> List.drop position
     |> List.head
     |> Maybe.andThen identity
-    |> Maybe.map .color

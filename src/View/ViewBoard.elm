@@ -4,7 +4,7 @@ import Html exposing (Html)
 import Svg exposing (Svg, svg, line, circle)
 import Svg.Attributes exposing (class, viewBox, x1, y1, x2, y2, cx, cy, r, stroke, strokeWidth, fill)
 import Svg.Events exposing (onClick)
-import Types exposing (Piece)
+import Types exposing (Piece, Position)
 import View.Piece exposing (viewPiece)
 import BoardData exposing (boardPositions)
 
@@ -29,8 +29,8 @@ positionCircle index (x, y) onClickMsg =
     The board has 24 positions arranged in 3 concentric squares
     Players place pieces on the intersection points (circles)
     -}
-viewBoard : List Piece -> (Int -> msg) -> Html msg
-viewBoard pieces onPositionClick =
+viewBoard : Maybe Position -> List Piece -> (Int -> msg) -> Html msg
+viewBoard selectedPiece pieces onPositionClick =
     svg
         [ class "w-full h-auto"  -- constrained responsive sizing
         , viewBox "0 0 500 500"  -- defines the coordinate system
@@ -72,5 +72,5 @@ viewBoard pieces onPositionClick =
          -- These are at all the line intersections (24 total)
          ++ List.indexedMap (\index pos -> positionCircle index pos onPositionClick) boardPositions
          -- Render the actual game pieces on top
-         ++ List.filterMap viewPiece pieces
+         ++ List.filterMap (viewPiece selectedPiece) pieces
         ) 

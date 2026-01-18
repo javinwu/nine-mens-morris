@@ -79,6 +79,8 @@ update msg model =
                             , phase = Placement
                             , whitePiecesPlaced = newWhiteCount
                             , blackPiecesPlaced = newBlackCount
+                            , whitePiecesLeft = 9 - newWhiteCount
+                            , blackPiecesLeft = 9 - newBlackCount
                             }
                     in
                     { model | board = newBoard, gameState = newGameState }
@@ -110,13 +112,6 @@ boardToPieces board =
             Maybe.map (\piece -> piece) maybePiece
         )
         |> List.filterMap identity
-
-
--- Get all pieces on the board that belong to a specific player
-getPiecesForPlayer : Color -> Board -> List Piece
-getPiecesForPlayer color board =
-    boardToPieces board
-        |> List.filter (\piece -> piece.color == color)
 
 
 -- Check if a player can still place pieces (max 9 per player)
@@ -163,7 +158,7 @@ view model =
             [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
 
         , -- Board
-          viewBoard (boardToPieces model.board) ClickedPosition
+          viewBoard model.gameState.selectedPiece (boardToPieces model.board) ClickedPosition
 
         , -- Controls
         -- reset button

@@ -4485,7 +4485,7 @@ var $elm$core$List$repeat = F2(
 var $author$project$Types$emptyBoard = A2($elm$core$List$repeat, 24, $elm$core$Maybe$Nothing);
 var $author$project$Types$Placement = {$: 'Placement'};
 var $author$project$Types$White = {$: 'White'};
-var $author$project$Types$initialGameState = {blackPiecesPlaced: 0, currentPlayer: $author$project$Types$White, phase: $author$project$Types$Placement, selectedPiece: $elm$core$Maybe$Nothing, whitePiecesPlaced: 0};
+var $author$project$Types$initialGameState = {blackPiecesLeft: 9, blackPiecesPlaced: 0, currentPlayer: $author$project$Types$White, phase: $author$project$Types$Placement, selectedPiece: $elm$core$Maybe$Nothing, whitePiecesLeft: 9, whitePiecesPlaced: 0};
 var $author$project$Main$init = {board: $author$project$Types$emptyBoard, gameState: $author$project$Types$initialGameState};
 var $elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
@@ -5323,10 +5323,12 @@ var $author$project$Main$update = F2(
 						var newWhiteCount = _v1.a;
 						var newBlackCount = _v1.b;
 						var newGameState = {
+							blackPiecesLeft: 9 - newBlackCount,
 							blackPiecesPlaced: newBlackCount,
 							currentPlayer: $author$project$Main$nextPlayer(currentPlayer),
 							phase: $author$project$Types$Placement,
 							selectedPiece: $elm$core$Maybe$Nothing,
+							whitePiecesLeft: 9 - newWhiteCount,
 							whitePiecesPlaced: newWhiteCount
 						};
 						return _Utils_update(
@@ -5506,17 +5508,26 @@ var $author$project$View$ViewBoard$positionCircle = F3(
 var $elm$svg$Svg$rect = $elm$svg$Svg$trustedNode('rect');
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
 var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
-var $author$project$View$Piece$pieceStroke = function (color) {
-	if (color.$ === 'White') {
-		return _List_Nil;
-	} else {
-		return _List_fromArray(
-			[
-				$elm$svg$Svg$Attributes$stroke('black'),
-				$elm$svg$Svg$Attributes$strokeWidth('2')
-			]);
-	}
-};
+var $author$project$View$Piece$pieceStroke = F2(
+	function (color, isSelected) {
+		if (isSelected) {
+			return _List_fromArray(
+				[
+					$elm$svg$Svg$Attributes$stroke('#FFD700'),
+					$elm$svg$Svg$Attributes$strokeWidth('3')
+				]);
+		} else {
+			if (color.$ === 'White') {
+				return _List_Nil;
+			} else {
+				return _List_fromArray(
+					[
+						$elm$svg$Svg$Attributes$stroke('black'),
+						$elm$svg$Svg$Attributes$strokeWidth('2')
+					]);
+			}
+		}
+	});
 var $author$project$View$Piece$playerColor = function (color) {
 	if (color.$ === 'White') {
 		return 'white';
@@ -5528,37 +5539,41 @@ var $author$project$BoardData$positionToCoordinates = function (pos) {
 	return $elm$core$List$head(
 		A2($elm$core$List$drop, pos, $author$project$BoardData$boardPositions));
 };
-var $author$project$View$Piece$viewPiece = function (piece) {
-	return A2(
-		$elm$core$Maybe$map,
-		function (_v0) {
-			var x = _v0.a;
-			var y = _v0.b;
-			return A2(
-				$elm$svg$Svg$circle,
-				_Utils_ap(
-					_List_fromArray(
-						[
-							$elm$svg$Svg$Attributes$cx(
-							$elm$core$String$fromInt(x)),
-							$elm$svg$Svg$Attributes$cy(
-							$elm$core$String$fromInt(y)),
-							$elm$svg$Svg$Attributes$r('9'),
-							$elm$svg$Svg$Attributes$fill(
-							$author$project$View$Piece$playerColor(piece.color))
-						]),
-					$author$project$View$Piece$pieceStroke(piece.color)),
-				_List_Nil);
-		},
-		$author$project$BoardData$positionToCoordinates(piece.position));
-};
+var $author$project$View$Piece$viewPiece = F2(
+	function (selectedPiece, piece) {
+		var isSelected = _Utils_eq(
+			selectedPiece,
+			$elm$core$Maybe$Just(piece.position));
+		return A2(
+			$elm$core$Maybe$map,
+			function (_v0) {
+				var x = _v0.a;
+				var y = _v0.b;
+				return A2(
+					$elm$svg$Svg$circle,
+					_Utils_ap(
+						_List_fromArray(
+							[
+								$elm$svg$Svg$Attributes$cx(
+								$elm$core$String$fromInt(x)),
+								$elm$svg$Svg$Attributes$cy(
+								$elm$core$String$fromInt(y)),
+								$elm$svg$Svg$Attributes$r('9'),
+								$elm$svg$Svg$Attributes$fill(
+								$author$project$View$Piece$playerColor(piece.color))
+							]),
+						A2($author$project$View$Piece$pieceStroke, piece.color, isSelected)),
+					_List_Nil);
+			},
+			$author$project$BoardData$positionToCoordinates(piece.position));
+	});
 var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var $elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
 var $elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
 var $elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
 var $elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
-var $author$project$View$ViewBoard$viewBoard = F2(
-	function (pieces, onPositionClick) {
+var $author$project$View$ViewBoard$viewBoard = F3(
+	function (selectedPiece, pieces, onPositionClick) {
 		return A2(
 			$elm$svg$Svg$svg,
 			_List_fromArray(
@@ -5781,7 +5796,10 @@ var $author$project$View$ViewBoard$viewBoard = F2(
 								return A3($author$project$View$ViewBoard$positionCircle, index, pos, onPositionClick);
 							}),
 						$author$project$BoardData$boardPositions),
-					A2($elm$core$List$filterMap, $author$project$View$Piece$viewPiece, pieces))));
+					A2(
+						$elm$core$List$filterMap,
+						$author$project$View$Piece$viewPiece(selectedPiece),
+						pieces))));
 	});
 var $author$project$Main$view = function (model) {
 	return A2(
@@ -5803,8 +5821,9 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$text(
 						'Current Player: ' + $author$project$Types$playerToString(model.gameState.currentPlayer))
 					])),
-				A2(
+				A3(
 				$author$project$View$ViewBoard$viewBoard,
+				model.gameState.selectedPiece,
 				$author$project$Main$boardToPieces(model.board),
 				$author$project$Main$ClickedPosition),
 				A2(

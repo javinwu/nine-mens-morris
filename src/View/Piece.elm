@@ -2,12 +2,15 @@ module View.Piece exposing (viewPiece)
 
 import Svg exposing (Svg, circle)
 import Svg.Attributes exposing (cx, cy, r, fill, stroke, strokeWidth)
-import Types exposing (Piece, Color(..))
+import Types exposing (Piece, Color(..), Position)
 import BoardData exposing (positionToCoordinates)
 
 
-viewPiece : Piece -> Maybe (Svg msg)
-viewPiece piece =
+viewPiece : Maybe Position -> Piece -> Maybe (Svg msg)
+viewPiece selectedPiece piece =
+    let
+        isSelected = selectedPiece == Just piece.position
+    in
     positionToCoordinates piece.position
         |> Maybe.map (\(x, y) ->
             circle
@@ -16,20 +19,24 @@ viewPiece piece =
                 , r "9"
                 , fill (playerColor piece.color)
                 ]
-                ++ pieceStroke piece.color
+                ++ pieceStroke piece.color isSelected
                 )
                 []
         )
 
 
-{-| Returns stroke attributes based on player color
-White pieces have no stroke for a clean look, black pieces have black stroke
+{-| Returns stroke attributes based on player color and selection state
+Selected pieces get a bright highlight stroke, otherwise white pieces have no stroke
+and black pieces have a black stroke
 -}
-pieceStroke : Color -> List (Svg.Attribute msg)
-pieceStroke color =
-    case color of
-        White -> []
-        Black -> [ stroke "black", strokeWidth "2" ]
+pieceStroke : Color -> Bool -> List (Svg.Attribute msg)
+pieceStroke color isSelected =
+    if isSelected then
+        [ stroke "#FFD700", strokeWidth "3" ]  -- gold highlight for selected piece
+    else
+        case color of
+            White -> []
+            Black -> [ stroke "black", strokeWidth "2" ]
 
 
 playerColor : Color -> String
