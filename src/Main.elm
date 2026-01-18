@@ -4,7 +4,8 @@ import Browser
 import Html exposing (Html, div, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import Types exposing (..)
+import Svg exposing (Svg)
+import Types exposing (Piece, Color(..))
 import View.ViewBoard exposing (viewBoard)
 
 
@@ -101,38 +102,38 @@ boardToPieces board =
 
 
 -- Validation helpers
-getPiecesForPlayer : Player -> Board -> List Piece
-getPiecesForPlayer player board =
+getPiecesForPlayer : Color -> Board -> List Piece
+getPiecesForPlayer color board =
     boardToPieces board
-        |> List.filter (\piece -> piece.player == player)
+        |> List.filter (\piece -> piece.color == color)
 
 
-canPlacePiece : Player -> GameState -> Bool
-canPlacePiece player gameState =
+canPlacePiece : Color -> GameState -> Bool
+canPlacePiece color gameState =
     let
         piecesPlaced =
-            case player of
+            case color of
                 White -> gameState.whitePiecesPlaced
                 Black -> gameState.blackPiecesPlaced
     in
     piecesPlaced < 9
 
 
-placePiece : Int -> Player -> Board -> Board
-placePiece pos player board =
+placePiece : Int -> Color -> Board -> Board
+placePiece pos color board =
     List.indexedMap
         (\index maybePiece ->
             if index == pos then
-                Just { player = player, position = pos }
+                Just { color = color, position = pos }
             else
                 maybePiece
         )
         board
 
 
-nextPlayer : Player -> Player
-nextPlayer player =
-    case player of
+nextPlayer : Color -> Color
+nextPlayer color =
+    case color of
         White -> Black
         Black -> White
 

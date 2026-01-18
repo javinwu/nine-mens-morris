@@ -3,7 +3,7 @@ module Types exposing (..)
 import List
 
 -- Add your type definitions here
-type Player
+type Color
   = White
   | Black
 
@@ -13,12 +13,12 @@ type alias Board =
   List (Maybe Piece)
 
 type alias Piece =
-  { player : Player
+  { color : Color
   , position : Int
   }
 
 type alias GameState =
-  { currentPlayer : Player
+  { currentPlayer : Color
   , selectedPiece : Maybe Position
   , phase : GamePhase
   , whitePiecesPlaced : Int
@@ -46,8 +46,8 @@ initialGameState =
   , blackPiecesPlaced = 0
   }
 
-playerToString : Player -> String
-playerToString player =
-  case player of
+playerToString : Color -> String
+playerToString color =
+  case color of
     White -> "White"
     Black -> "Black"

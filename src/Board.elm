@@ -1,6 +1,13 @@
 module Board exposing (..)
 
 import Types exposing (Piece)
+import Types exposing (Color)
+import Types exposing (Color(..))
+
+pieces : List (Maybe Piece)
+pieces
+  = [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
+
 adjacencies : List (List Int)
 adjacencies
   = [[1,7], [0,2,9], [1,3], [2,4,11], [5,3], [4,6,13], [5,7], [0,6,15]
@@ -16,6 +23,13 @@ possibleMills
 
 getAdjacencies : Piece -> List Int
 getAdjacencies piece =
-    List.drop piece.position adjacencies
-        |> List.head
-        |> Maybe.withDefault []
+  List.drop piece.position adjacencies
+    |> List.head
+    |> Maybe.withDefault []
+
+getPieceAt : Int -> Maybe Piece
+getPieceAt position =
+  pieces
+    |> List.drop position
+    |> List.head
+    |> Maybe.andThen identity
