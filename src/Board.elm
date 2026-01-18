@@ -23,8 +23,7 @@ This module defines the structure of the game board:
      6 --------- 5 --------- 4
 -}
 
-
-import List.Extra
+import List.Extra exposing (elemIndex)
 import Types exposing (Piece)
 import Types exposing (Color)
 
@@ -93,34 +92,17 @@ isPositionEmpty position board =
   getPieceAt position board == Nothing  -- Empty if no color found
 
 
--- Check if there is ANY mill on the board
--- Returns True if any player has formed a mill (3 in a row)
--- A mill exists when all 3 positions in a possibleMills combination
--- contain pieces of the same color
---
--- NOTE: This checks for ANY mill anywhere on the board
--- For game logic, you usually want to check if a specific move formed a NEW mill
-isMill : List (Maybe Piece) -> Bool
-isMill gamePieces =
-  let
-    -- Helper function to get piece at a specific position
-    pieceAt pos =
-      List.drop pos gamePieces
-        |> List.head
-        |> Maybe.andThen identity
-  in
-  -- Check each possible mill combination
-  List.any
-    (\mill ->
-      let
-        -- Get the pieces at all 3 mill positions
-        millPieces = List.map pieceAt mill
-      in
-      -- Mill is formed if all 3 positions have pieces of the same color
-      case millPieces of
-        [Just p1, Just p2, Just p3] ->
-          p1 == p2 && p2 == p3  -- All three pieces must match
-        _ ->
-          False  -- Not a mill if any position is empty
-    )
-    possibleMills
+-- Check if a specific piece is part of a mill on the given board
+-- Returns True if the given piece is part of a completed mill (3 in a row)
+-- This checks if all 3 positions in the mill containing this piece have the same color
+-- Used to determine if a player just formed a mill with their move
+isMill : Piece -> List (Maybe Piece) -> Bool
+isMill piece board =
+  case List.Extra.elemIndex piece.position (List.concat possibleMills) of
+    Just a -> possibleMills
+      |> List.drop (floor ((toFloat a) / 4))
+      |> List.head
+      |> Maybe.withDefault []
+      |> List.map (\pos -> getPieceAt pos board)
+      |> List.all (\color -> color == Just piece.color)
+    Nothing -> False
