@@ -1,6 +1,6 @@
 module Board exposing (..)
 
-import List.Extra
+import List.Extra exposing (elemIndex)
 import Types exposing (Piece)
 import Types exposing (Color)
 
@@ -40,23 +40,13 @@ isPositionEmpty : Int -> List (Maybe Piece) -> Bool
 isPositionEmpty position board =
   getPieceAt position board == Nothing
 
-isMill : List (Maybe Piece) -> Bool
-isMill gamePieces =
-  let
-    pieceAt pos =
-      List.drop pos gamePieces
-        |> List.head
-        |> Maybe.andThen identity
-  in
-  List.any
-    (\mill ->
-      let
-        millPieces = List.map pieceAt mill
-      in
-      case millPieces of
-        [Just p1, Just p2, Just p3] ->
-          p1 == p2 && p2 == p3
-        _ ->
-          False
-    )
-    possibleMills
+isMill : Piece -> Bool
+isMill piece =
+  case List.Extra.elemIndex piece.position (List.concat possibleMills) of
+    Just a -> possibleMills
+      |> List.drop (floor ((toFloat a) / 4))
+      |> List.head
+      |> Maybe.withDefault []
+      |> List.map getPieceAt
+      |> List.all (\color -> color == Just piece.color)
+    Nothing -> False
