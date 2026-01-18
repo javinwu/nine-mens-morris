@@ -1,7 +1,6 @@
 module Board exposing (..)
 
 import Types exposing (Piece)
--- Add your board logic here
 adjacencies : List (List Int)
 adjacencies = [[1,7], [0,2,9], [1,3], [2,4,11], [5,3], [4,6,13], [5,7], [0,6,15]
   , [9,15], [1,8,10,17], [9,11], [3,10,12,19], [11,13], [5,12,14,21], [13,15], [7,8,14,23]
