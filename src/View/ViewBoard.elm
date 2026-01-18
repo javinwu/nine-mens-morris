@@ -29,8 +29,8 @@ positionCircle index (x, y) onClickMsg =
     The board has 24 positions arranged in 3 concentric squares
     Players place pieces on the intersection points (circles)
     -}
-viewBoard : Maybe Position -> List Piece -> (Int -> msg) -> Html msg
-viewBoard selectedPiece pieces onPositionClick =
+viewBoard : Maybe Position -> List Piece -> (Int -> msg) -> (Int -> msg) -> Html msg
+viewBoard selectedPiece pieces onPositionClick onPieceClick =
     svg
         [ class "w-full h-auto"  -- constrained responsive sizing
         , viewBox "0 0 500 500"  -- defines the coordinate system
@@ -72,5 +72,5 @@ viewBoard selectedPiece pieces onPositionClick =
          -- These are at all the line intersections (24 total)
          ++ List.indexedMap (\index pos -> positionCircle index pos onPositionClick) boardPositions
          -- Render the actual game pieces on top
-         ++ List.filterMap (viewPiece selectedPiece) pieces
+         ++ List.filterMap (viewPiece selectedPiece onPieceClick) pieces
         ) 

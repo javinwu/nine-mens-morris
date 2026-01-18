@@ -28,18 +28,35 @@ getAdjacencies piece =
     |> List.head
     |> Maybe.withDefault []
 
-getPieceAt : Int -> Maybe Color
-getPieceAt position =
-  pieces
+getPieceAt : Int -> List (Maybe Piece) -> Maybe Color
+getPieceAt position board =
+  board
     |> List.drop position
     |> List.head
     |> Maybe.andThen identity
     |> Maybe.map .color
 
-isPositionEmpty : Int -> Bool
-isPositionEmpty position =
-  getPieceAt position == Nothing
+isPositionEmpty : Int -> List (Maybe Piece) -> Bool
+isPositionEmpty position board =
+  getPieceAt position board == Nothing
 
 isMill : List (Maybe Piece) -> Bool
 isMill gamePieces =
-  List.any (\mill -> List.all (\pos -> List.head (List.drop pos gamePieces) == Just mill) mill) possibleMills
+  let
+    pieceAt pos =
+      List.drop pos gamePieces
+        |> List.head
+        |> Maybe.andThen identity
+  in
+  List.any
+    (\mill ->
+      let
+        millPieces = List.map pieceAt mill
+      in
+      case millPieces of
+        [Just p1, Just p2, Just p3] ->
+          p1 == p2 && p2 == p3
+        _ ->
+          False
+    )
+    possibleMills
