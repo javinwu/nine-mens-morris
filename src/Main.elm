@@ -335,7 +335,7 @@ handleFlyingClick : Int -> Piece -> Board -> Board
 handleFlyingClick pos piece board =
     if getPieceAt pos board == Nothing then
         placePiece pos piece.color board
-        |> removePiece piece.position board
+        |> removePiece piece.position 
     else
         board
 
