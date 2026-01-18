@@ -2,7 +2,7 @@ module Board exposing (..)
 
 import Types exposing (Piece, Board)
 import Types exposing (Color)
-import Types exposing (Color(..))
+-- import Types exposing (Color(..))
 
 pieces : List (Maybe Piece)
 pieces
@@ -33,3 +33,4 @@ getPieceAt position board =
     |> List.drop position
     |> List.head
     |> Maybe.andThen identity
+    |> Maybe.map .color
