@@ -3,14 +3,15 @@ module View.ViewBoard exposing (viewBoard)
 import Html exposing (Html)
 import Svg exposing (Svg, svg, line, circle)
 import Svg.Attributes exposing (class, viewBox, x1, y1, x2, y2, cx, cy, r, stroke, strokeWidth, fill)
+import Svg.Events exposing (onClick)
 import Types exposing (Piece)
 import View.Piece exposing (viewPiece)
 import BoardData exposing (boardPositions)
 
-{-| Creates a circle at the given position
+{-| Creates a clickable circle at the given position
 -}
-positionCircle : (Int, Int) -> Svg msg
-positionCircle (x, y) =
+positionCircle : Int -> (Int, Int) -> (Int -> msg) -> Svg msg
+positionCircle index (x, y) onClickMsg =
     circle
         [ cx (String.fromInt x)
         , cy (String.fromInt y)
@@ -18,6 +19,8 @@ positionCircle (x, y) =
         , fill "#D4A574"  -- same as board background
         , stroke "#8B4513"  -- dark brown border
         , strokeWidth "2"
+        , onClick (onClickMsg index)
+        , Svg.Attributes.style "cursor: pointer;"
         ]
         []
 
@@ -26,8 +29,8 @@ positionCircle (x, y) =
     The board has 24 positions arranged in 3 concentric squares
     Players place pieces on the intersection points (circles)
     -}
-viewBoard : List Piece -> Html msg
-viewBoard pieces =
+viewBoard : List Piece -> (Int -> msg) -> Html msg
+viewBoard pieces onPositionClick =
     svg
         [ class "w-full h-auto"  -- constrained responsive sizing
         , viewBox "0 0 500 500"  -- defines the coordinate system
@@ -67,7 +70,7 @@ viewBoard pieces =
          ]
          -- White circles show where players can place their pieces
          -- These are at all the line intersections (24 total)
-         ++ List.map positionCircle boardPositions
+         ++ List.indexedMap (\index pos -> positionCircle index pos onPositionClick) boardPositions
          -- Render the actual game pieces on top
          ++ List.filterMap viewPiece pieces
         ) 
