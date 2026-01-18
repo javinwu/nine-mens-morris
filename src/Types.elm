@@ -1,7 +1,7 @@
 module Types exposing (..)
 
 -- Add your type definitions here
-type Player
+type Color
   = White
   | Black
 
@@ -9,6 +9,6 @@ type alias Board =
   List (Maybe Piece)
 
 type alias Piece = 
-  { player : Player
+  { color : Color
   , position : Int
   }

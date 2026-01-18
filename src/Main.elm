@@ -4,7 +4,7 @@ import Browser
 import Html exposing (Html, div)
 import Html.Attributes exposing (class)
 import Svg exposing (Svg)
-import Types exposing (Piece, Player(..))
+import Types exposing (Piece, Color(..))
 import View.ViewBoard exposing (viewBoard)
 import View.Piece exposing (viewPiece)
 
