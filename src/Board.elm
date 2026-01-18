@@ -1,12 +1,12 @@
 module Board exposing (..)
 
-import Types exposing (Piece, Board)
+import List.Extra
+import Types exposing (Piece)
 import Types exposing (Color)
--- import Types exposing (Color(..))
 
+-- lists of board layout stuff
 pieces : List (Maybe Piece)
-pieces
-  = [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
+pieces = List.repeat 24 Nothing
 
 adjacencies : List (List Int)
 adjacencies
@@ -21,16 +21,25 @@ possibleMills
   , [16,17,18], [18,19,20], [20,21,22], [22,23,16]
   , [1,9,17], [3,11,19], [5,13,21], [7,15,23]]
 
+-- get board info
 getAdjacencies : Piece -> List Int
 getAdjacencies piece =
   List.drop piece.position adjacencies
     |> List.head
     |> Maybe.withDefault []
 
-getPieceAt : Int -> Board -> Maybe Piece
-getPieceAt position board =
-  board
+getPieceAt : Int -> Maybe Color
+getPieceAt position =
+  pieces
     |> List.drop position
     |> List.head
     |> Maybe.andThen identity
     |> Maybe.map .color
+
+isPositionOccupied : Int -> Bool
+isPositionOccupied position =
+  getPieceAt position == Nothing
+
+isMill : List (Maybe Piece) -> Bool
+isMill gamePieces =
+  List.any (\mill -> List.all (\pos -> List.head (List.drop pos gamePieces) == Just mill) mill) possibleMills
