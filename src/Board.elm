@@ -36,8 +36,8 @@ getPieceAt position =
     |> Maybe.andThen identity
     |> Maybe.map .color
 
-isPositionOccupied : Int -> Bool
-isPositionOccupied position =
+isPositionEmpty : Int -> Bool
+isPositionEmpty position =
   getPieceAt position == Nothing
 
 isMill : List (Maybe Piece) -> Bool
