@@ -18,6 +18,9 @@ GAME PHASES:
    - Can remove any piece NOT in a mill
    - If ALL opponent pieces are in mills, can remove any piece
    - After removal → Return to previous phase
+
+5. GameOver: Game is over and a winner is declared.
+    - Cannot make any actions other than reset board
 -}
 
 import Browser
@@ -25,6 +28,7 @@ import Html exposing (Html, div, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Svg exposing (Svg)
+import List exposing (length)
 import Maybe.Extra exposing (isNothing)
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
@@ -166,16 +170,18 @@ handlePlacement pos model =
         model
 
 
--- Returns Flying if player has 3 pieces, otherwise Movement
-determinePhaseForPlayer : Color -> GameState -> GamePhase
-determinePhaseForPlayer color gameState =
+-- Returns GameOver if game is over, Flying if player has 3 pieces, otherwise Movement
+determinePhaseForPlayer : Color -> Board -> GameState -> GamePhase
+determinePhaseForPlayer color board gameState =
     let
         piecesLeft =
             case color of
                 White -> gameState.whitePiecesLeft
                 Black -> gameState.blackPiecesLeft
     in
-    if piecesLeft == 3 then
+    if checkWin board then
+        GameOver
+    else if piecesLeft == 3 then
         Flying
     else
         Movement
@@ -204,13 +210,13 @@ attemptMove pos model =
                                 newBoard = placePiece pos selectedColor boardWithRemoved
                                 movedPiece = { color = selectedColor, position = pos }
                                 formedMill = isMill movedPiece newBoard
-                                basePhase = determinePhaseForPlayer model.gameState.currentPlayer model.gameState
+                                basePhase = determinePhaseForPlayer model.gameState.currentPlayer newBoard model.gameState
 
                                 (newPhase, nextPhaseAfterRemove) =
                                     if formedMill then
                                         (Removing, Just basePhase)
                                     else
-                                        (determinePhaseForPlayer (nextPlayer model.gameState.currentPlayer) model.gameState, Nothing)
+                                        (determinePhaseForPlayer (nextPlayer model.gameState.currentPlayer) newBoard model.gameState, Nothing)
 
                                 newGameState =
                                     { currentPlayer = if formedMill then model.gameState.currentPlayer else nextPlayer model.gameState.currentPlayer
@@ -271,7 +277,7 @@ handleRemovePiece pos model =
                             if basePhase == Placement then
                                 Placement
                             else
-                                determinePhaseForPlayer opponentColor tempGameState
+                                determinePhaseForPlayer opponentColor newBoard tempGameState
 
                         newGameState =
                             { tempGameState | phase = newPhase }
@@ -336,6 +342,7 @@ removePiece pos board =
         board
 
 
+{-
 handleFlyingClick : Int -> Piece -> Board -> Board
 handleFlyingClick pos piece board =
     if getPieceAt pos board == Nothing then
@@ -343,6 +350,7 @@ handleFlyingClick pos piece board =
         |> removePiece piece.position
     else
         board
+-}
 
 
 -- Can remove if: not in mill OR all opponent pieces are in mills
@@ -368,30 +376,23 @@ nextPlayer color =
         White -> Black
         Black -> White
 
-checkWin : Board -> Color -> Model -> Bool
-checkWin board color model =
-    if color == White then
-        if model.gameState.whitePiecesLeft <= 2 then
-            True
-        else
-            let
-                pieces = getPiecesForPlayer color board
-            in
-            List.map getPieceAt (List.concatMap getAdjacencies pieces)
-            |> List.map (\getPiece -> getPiece board)
-            |> List.all isNothing
-            |> not
+checkWin : Board -> Bool
+checkWin board =
+    if length (getPiecesForPlayer White board) <= 2 || length(getPiecesForPlayer Black board) <= 2 then --if one of the players has two pieces, game over
+        True
     else
-        if model.gameState.blackPiecesLeft <= 2 then
-            True
-        else
-            let
-                pieces = getPiecesForPlayer color board
-            in
-            List.map getPieceAt (List.concatMap getAdjacencies pieces)
+        let
+            whitePieces = getPiecesForPlayer White board
+            blackPieces = getPiecesForPlayer Black board
+        in
+        if List.all isNothing (List.map (\getPiece -> getPiece board) (List.map getPieceAt (List.concatMap getAdjacencies whitePieces))) then   -- if white still has moves, check black
+            List.concatMap getAdjacencies blackPieces
+            |> List.map getPieceAt
             |> List.map (\getPiece -> getPiece board)
             |> List.all isNothing
             |> not
+        else
+            False
 
 -- VIEW
 
@@ -402,6 +403,7 @@ getPhaseMessage phase =
         Movement -> "Move your piece to an adjacent position"
         Flying -> "Fly your piece to any empty position"
         Removing -> "Mill formed! Remove an opponent's piece"
+        GameOver -> "Game over! Reset the board to play again."
 
 
 view : Model -> Html Msg

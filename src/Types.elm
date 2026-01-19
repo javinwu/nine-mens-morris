@@ -40,6 +40,7 @@ type GamePhase
   | Movement
   | Flying
   | Removing
+  | GameOver
 
 
 emptyBoard : Board
