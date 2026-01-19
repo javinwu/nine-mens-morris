@@ -55,9 +55,9 @@ type Msg
     | NoOp
 
 
--- ============================================================================
+
 -- UPDATE
--- ============================================================================
+
 
 update : Msg -> Model -> Model
 update msg model =
@@ -90,9 +90,8 @@ update msg model =
             model
 
 
--- ============================================================================
 -- PHASE HANDLERS
--- ============================================================================
+
 
 handleMovementClick : Position -> Model -> Model
 handleMovementClick pos model =
@@ -235,9 +234,8 @@ attemptMove pos model =
             model
 
 
--- ============================================================================
+
 -- REMOVING - Handle piece removal after forming a mill
--- ============================================================================
 
 handleRemovePiece : Position -> Model -> Model
 handleRemovePiece pos model =
@@ -287,9 +285,8 @@ handleRemovePiece pos model =
             model
 
 
--- ============================================================================
+
 -- HELPER FUNCTIONS
--- ============================================================================
 
 boardToPieces : Board -> List Piece
 boardToPieces board =
@@ -396,9 +393,7 @@ checkWin board color model =
             |> List.all isNothing
             |> not
 
--- ============================================================================
 -- VIEW
--- ============================================================================
 
 getPhaseMessage : GamePhase -> String
 getPhaseMessage phase =
