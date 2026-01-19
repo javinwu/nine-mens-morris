@@ -5,4 +5,16 @@ body {
     margin: 0;
     padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    /* Wood background applied to body - prevents white space on scroll */
+    background: linear-gradient(135deg, #8B6F47 0%, #D2B48C 50%, #A0826D 100%);
+    /* Fixed background so gradient doesn't repeat on scroll */
+    background-attachment: fixed;
+    /* Ensure background covers entire viewport */
+    min-height: 100vh;
+}
+
+/* Prevent overscroll bounce on mobile showing white */
+html {
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #8B6F47 0%, #D2B48C 50%, #A0826D 100%);
 }

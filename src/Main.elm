@@ -1,20 +1,23 @@
 module Main exposing (main)
 
-{-| Nine Men's Morris Game - Main Module
+{-| Nine Men's Morris Game
 
-This module implements the core game logic for Nine Men's Morris (also known as Mill).
+GAME PHASES:
+1. Placement: Players place 9 pieces each on empty positions
+   - Mill formed → REMOVING phase (must remove opponent piece)
+   - Both placed all 9 → MOVEMENT phase
 
-## GAME PHASES
-1. Placement Phase: Players take turns placing their 9 pieces on the board
-2. Movement Phase: After all pieces are placed, players move pieces to adjacent positions
-3. Flying Phase: When a player has only 3 pieces left, they can "fly" to any position (TODO)
+2. Movement: Players move pieces to adjacent positions
+   - Mill formed → REMOVING phase
+   - Player reaches 3 pieces → FLYING phase
 
-## GAME FLOW
-- Players alternate turns (White starts)
-- In Placement: Click empty position to place a piece
-- In Movement: Click your piece to select it, then click adjacent empty position to move
-- Forming a mill (3 in a row) allows removing an opponent's piece (TODO)
-- Win by reducing opponent to 2 pieces or blocking all their moves (TODO)
+3. Flying: Player with 3 pieces can move to ANY empty position
+   - Mill formed → REMOVING phase
+
+4. Removing: Current player MUST remove an opponent's piece
+   - Can remove any piece NOT in a mill
+   - If ALL opponent pieces are in mills, can remove any piece
+   - After removal → Return to previous phase
 -}
 
 import Browser
@@ -29,325 +32,344 @@ import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill)
 
 
 -- MODEL
--- The application state that changes over time
 
--- The main application state
--- Tracks both the board (where pieces are) and game state (whose turn, what phase, etc.)
 type alias Model =
-    { board : Board           -- The 24 positions, each with Maybe Piece
-    , gameState : GameState   -- Current player, phase, piece counts, selected piece
+    { board : Board
+    , gameState : GameState
     }
 
 
--- Initialize a new game with an empty board
--- Called when the app starts and when user clicks "Game Reset"
 init : Model
 init =
-    { board = emptyBoard            -- All 24 positions start empty
-    , gameState = initialGameState  -- White player, Placement phase, no pieces placed
+    { board = emptyBoard
+    , gameState = initialGameState
     }
 
 
 -- MESSAGES
--- All possible user interactions that can change the model
 
--- All possible user actions in the game
--- These are sent when the user interacts with the UI
 type Msg
-    = ClickedPosition Position  -- User clicked an empty board position (to place or move to)
-    | ClickedPiece Position     -- User clicked an existing piece (to select for movement)
-    | NewGame                   -- User clicked the reset button
-    | NoOp                      -- No operation (placeholder for future use)
+    = ClickedPosition Position
+    | ClickedPiece Position
+    | NewGame
+    | NoOp
 
 
+-- ============================================================================
 -- UPDATE
+-- ============================================================================
 
--- Handle user actions and update the game state accordingly
--- This is the core game logic that processes all user interactions
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        -- HANDLE CLICKING ON AN EXISTING PIECE
-        -- This happens when a player clicks on a piece during Movement phase
         ClickedPiece pos ->
-            handleMovementClick pos model
+            if model.gameState.phase == Removing then
+                handleRemovePiece pos model
+            else
+                handleMovementClick pos model
 
-        -- HANDLE CLICKING ON AN EMPTY POSITION
-        -- This happens in two scenarios:
-        -- 1. Placement phase: placing a new piece
-        -- 2. Movement phase: moving a selected piece to a new position
         ClickedPosition pos ->
             if model.gameState.phase == Placement then
                 handlePlacement pos model
             else if model.gameState.phase == Movement then
                 attemptMove pos model
+            else if model.gameState.phase == Flying then
+                attemptMove pos model
+            else if model.gameState.phase == Removing then
+                model
             else
-                -- OTHER PHASES (like Flying phase, not yet implemented)
-                -- For now, just clear any selection
                 let
-                    newGameState = model.gameState
-                    updatedGameState = { newGameState | selectedPiece = Nothing }
+                    gs = model.gameState
                 in
-                { model | gameState = updatedGameState }
+                { model | gameState = { gs | selectedPiece = Nothing } }
 
-        -- HANDLE GAME RESET
-        -- User clicked the "Game Reset" button
         NewGame ->
-            init  -- Reset to initial state
+            init
 
-        -- NO OPERATION
-        -- Placeholder for future use
         NoOp ->
             model
 
 
+-- ============================================================================
 -- PHASE HANDLERS
--- Dedicated functions for handling different game phases
+-- ============================================================================
 
--- Handle clicking on a piece during Movement phase
--- Allows players to select their own pieces or attempt moves
 handleMovementClick : Position -> Model -> Model
 handleMovementClick pos model =
-    -- Only allow piece selection during Movement phase
-    -- (In Placement phase, pieces aren't clicked - positions are)
-    if model.gameState.phase == Movement then
-        let
-            -- Find out what color piece is at this position
-            pieceColor = getPieceAt pos model.board
-        in
-        case pieceColor of
+    if model.gameState.phase == Movement || model.gameState.phase == Flying then
+        case getPieceAt pos model.board of
             Just color ->
-                -- Check if the piece belongs to the current player
-                -- Players can only select their own pieces
                 if color == model.gameState.currentPlayer then
                     let
-                        -- Select this piece for movement
-                        newGameState = model.gameState
-                        updatedGameState = { newGameState | selectedPiece = Just pos }
+                        gs = model.gameState
                     in
-                    { model | gameState = updatedGameState }
+                    { model | gameState = { gs | selectedPiece = Just pos } }
                 else
-                    -- Clicked opponent's piece - try to move selected piece here
-                    -- This handles case where user clicked opponent piece while having a piece selected
                     case model.gameState.selectedPiece of
-                        Just selectedPos ->
-                            -- Treat this as trying to capture (not yet implemented)
-                            -- For now, just deselect
+                        Just _ ->
                             let
-                                oldGameState = model.gameState
-                                updatedGameState = { oldGameState | selectedPiece = Nothing }
+                                gs = model.gameState
                             in
-                            { model | gameState = updatedGameState }
+                            { model | gameState = { gs | selectedPiece = Nothing } }
                         Nothing ->
-                            -- No piece selected, just ignore
                             model
             Nothing ->
-                -- No piece at this position - the position is actually empty
-                -- This can happen if the view sent ClickedPiece for an empty spot
-                -- Treat it as ClickedPosition instead
                 case model.gameState.selectedPiece of
-                    Just selectedPos ->
-                        -- Try to move the selected piece to this empty position
-                        -- (Reuse the attemptMove logic)
+                    Just _ ->
                         attemptMove pos model
                     Nothing ->
-                        -- No piece selected and no piece here, do nothing
                         model
     else
-        -- Not in Movement phase - ignore piece clicks
         model
 
 
--- Handle placing a piece during Placement phase
--- Places a new piece on the board if valid
 handlePlacement : Position -> Model -> Model
 handlePlacement pos model =
     let
         currentPlayer = model.gameState.currentPlayer
     in
-    -- Verify the position is empty and player hasn't placed all 9 pieces yet
     if getPieceAt pos model.board == Nothing && canPlacePiece currentPlayer model.gameState then
         let
-            -- Place the new piece on the board
             newBoard = placePiece pos currentPlayer model.board
+            placedPiece = { color = currentPlayer, position = pos }
+            formedMill = isMill placedPiece newBoard
 
-            -- Update the count of pieces placed for each player
-            -- Only increment the count for the current player
             (newWhiteCount, newBlackCount) =
                 case currentPlayer of
                     White -> (model.gameState.whitePiecesPlaced + 1, model.gameState.blackPiecesPlaced)
                     Black -> (model.gameState.whitePiecesPlaced, model.gameState.blackPiecesPlaced + 1)
 
-            -- Check if we should transition to Movement phase
-            -- This happens when both players have placed all 9 pieces (18 total)
-            newPhase =
+            basePhase =
                 if newWhiteCount == 9 && newBlackCount == 9 then
-                    Movement  -- All pieces placed, start moving them
+                    Movement
                 else
-                    Placement  -- Still placing pieces
+                    Placement
 
-            -- Update game state: switch player and update counts
+            (newPhase, nextPhaseAfterRemove) =
+                if formedMill then
+                    (Removing, Just basePhase)
+                else
+                    (basePhase, Nothing)
+
             newGameState =
-                { currentPlayer = nextPlayer currentPlayer
+                { currentPlayer = if formedMill then currentPlayer else nextPlayer currentPlayer
                 , selectedPiece = Nothing
                 , phase = newPhase
                 , whitePiecesPlaced = newWhiteCount
                 , blackPiecesPlaced = newBlackCount
                 , whitePiecesLeft = model.gameState.whitePiecesLeft
                 , blackPiecesLeft = model.gameState.blackPiecesLeft
+                , nextPhaseAfterRemove = nextPhaseAfterRemove
                 }
         in
         { model | board = newBoard, gameState = newGameState }
     else
-        -- Invalid placement: position occupied or player has no pieces left
         model
 
 
--- Attempt to move a selected piece to a position during Movement phase
--- Validates adjacency and executes the move if valid
+-- Returns Flying if player has 3 pieces, otherwise Movement
+determinePhaseForPlayer : Color -> GameState -> GamePhase
+determinePhaseForPlayer color gameState =
+    let
+        piecesLeft =
+            case color of
+                White -> gameState.whitePiecesLeft
+                Black -> gameState.blackPiecesLeft
+    in
+    if piecesLeft == 3 then
+        Flying
+    else
+        Movement
+
+
 attemptMove : Position -> Model -> Model
 attemptMove pos model =
     case model.gameState.selectedPiece of
         Just selectedPos ->
-            -- A piece is selected - try to move it to the clicked position
-
-            -- First, check if the destination is empty
             if isPositionEmpty pos model.board then
-                -- Get the color of the selected piece
                 case getPieceAt selectedPos model.board of
                     Just selectedColor ->
                         let
-                            -- Create a piece record to get adjacency info
                             selectedPiece = { color = selectedColor, position = selectedPos }
-                            -- Get all positions adjacent to the selected piece
                             adjacentPositions = getAdjacencies selectedPiece
-                        in
-                        -- Check if the destination is adjacent to the current position
-                        -- In Movement phase, pieces can only move to adjacent spots
-                        if List.member pos adjacentPositions then
-                            -- VALID MOVE: destination is adjacent and empty
-                            let
-                                -- Step 1: Remove piece from its old position
-                                boardWithRemoved = removePiece selectedPos model.board
-                                -- Step 2: Place piece at the new position
-                                newBoard = placePiece pos selectedColor boardWithRemoved
 
-                                -- Update game state: switch to next player, clear selection
+                            isValidMove =
+                                if model.gameState.phase == Flying then
+                                    True
+                                else
+                                    List.member pos adjacentPositions
+                        in
+                        if isValidMove then
+                            let
+                                boardWithRemoved = removePiece selectedPos model.board
+                                newBoard = placePiece pos selectedColor boardWithRemoved
+                                movedPiece = { color = selectedColor, position = pos }
+                                formedMill = isMill movedPiece newBoard
+                                basePhase = determinePhaseForPlayer model.gameState.currentPlayer model.gameState
+
+                                (newPhase, nextPhaseAfterRemove) =
+                                    if formedMill then
+                                        (Removing, Just basePhase)
+                                    else
+                                        (determinePhaseForPlayer (nextPlayer model.gameState.currentPlayer) model.gameState, Nothing)
+
                                 newGameState =
-                                    { currentPlayer = nextPlayer model.gameState.currentPlayer
+                                    { currentPlayer = if formedMill then model.gameState.currentPlayer else nextPlayer model.gameState.currentPlayer
                                     , selectedPiece = Nothing
-                                    , phase = Movement
+                                    , phase = newPhase
                                     , whitePiecesPlaced = model.gameState.whitePiecesPlaced
                                     , blackPiecesPlaced = model.gameState.blackPiecesPlaced
                                     , whitePiecesLeft = model.gameState.whitePiecesLeft
                                     , blackPiecesLeft = model.gameState.blackPiecesLeft
+                                    , nextPhaseAfterRemove = nextPhaseAfterRemove
                                     }
                             in
                             { model | board = newBoard, gameState = newGameState }
                         else
-                            -- INVALID: destination is not adjacent to selected piece
-                            -- Keep the model as is (piece stays selected)
                             model
                     Nothing ->
-                        -- Selected position has no piece - shouldn't happen
                         model
             else
-                -- Destination is occupied - can't move there
                 model
         Nothing ->
-            -- No piece selected - clicking empty position does nothing
             model
 
 
--- HELPER FUNCTIONS
--- These functions help with board manipulation and game logic
+-- ============================================================================
+-- REMOVING - Handle piece removal after forming a mill
+-- ============================================================================
 
--- Convert the board (list of Maybe Piece) into a list of actual pieces
--- Filters out empty positions (Nothing values) and returns only actual pieces
--- Example: [Nothing, Just piece1, Nothing, Just piece2] -> [piece1, piece2]
+handleRemovePiece : Position -> Model -> Model
+handleRemovePiece pos model =
+    let
+        pieceColor = getPieceAt pos model.board
+        opponentColor = nextPlayer model.gameState.currentPlayer
+    in
+    case pieceColor of
+        Just color ->
+            if color == opponentColor then
+                if canRemovePiece pos color model.board then
+                    let
+                        newBoard = removePiece pos model.board
+
+                        (newWhiteLeft, newBlackLeft) =
+                            case color of
+                                White -> (model.gameState.whitePiecesLeft - 1, model.gameState.blackPiecesLeft)
+                                Black -> (model.gameState.whitePiecesLeft, model.gameState.blackPiecesLeft - 1)
+
+                        tempGameState =
+                            { currentPlayer = opponentColor
+                            , selectedPiece = Nothing
+                            , phase = model.gameState.phase
+                            , whitePiecesPlaced = model.gameState.whitePiecesPlaced
+                            , blackPiecesPlaced = model.gameState.blackPiecesPlaced
+                            , whitePiecesLeft = newWhiteLeft
+                            , blackPiecesLeft = newBlackLeft
+                            , nextPhaseAfterRemove = Nothing
+                            }
+
+                        basePhase = Maybe.withDefault Movement model.gameState.nextPhaseAfterRemove
+                        newPhase =
+                            if basePhase == Placement then
+                                Placement
+                            else
+                                determinePhaseForPlayer opponentColor tempGameState
+
+                        newGameState =
+                            { tempGameState | phase = newPhase }
+                    in
+                    { model | board = newBoard, gameState = newGameState }
+                else
+                    model
+            else
+                model
+        Nothing ->
+            model
+
+
+-- ============================================================================
+-- HELPER FUNCTIONS
+-- ============================================================================
+
 boardToPieces : Board -> List Piece
 boardToPieces board =
     board
-        |> List.indexedMap (\_ maybePiece ->
-            Maybe.map (\piece -> piece) maybePiece
-        )
-        |> List.filterMap identity  -- Remove Nothing values
+        |> List.indexedMap (\_ maybePiece -> Maybe.map (\piece -> piece) maybePiece)
+        |> List.filterMap identity
 
 
--- Get all pieces on the board that belong to a specific player
--- Useful for counting pieces or checking game state
--- Example: getPiecesForPlayer White board -> [all white pieces]
 getPiecesForPlayer : Color -> Board -> List Piece
 getPiecesForPlayer color board =
     boardToPieces board
         |> List.filter (\piece -> piece.color == color)
 
 
--- Check if a player can still place pieces during Placement phase
--- Each player can place a maximum of 9 pieces
--- Returns True if player has placed fewer than 9 pieces
 canPlacePiece : Color -> GameState -> Bool
 canPlacePiece color gameState =
     let
-        -- Get the count of pieces already placed by this player
         piecesPlaced =
             case color of
                 White -> gameState.whitePiecesPlaced
                 Black -> gameState.blackPiecesPlaced
     in
-    piecesPlaced < 9  -- Can place if fewer than 9 pieces on board
+    piecesPlaced < 9
 
 
--- Place a piece of the given color at the specified position on the board
--- Creates a new piece at the given position with the specified color
--- Used in both Placement phase (placing new pieces) and Movement phase (moving pieces)
--- Example: placePiece 5 White board -> board with white piece at position 5
 placePiece : Int -> Color -> Board -> Board
 placePiece pos color board =
     List.indexedMap
         (\index maybePiece ->
             if index == pos then
-                -- Create a new piece at this position
                 Just { color = color, position = pos }
             else
-                -- Keep the existing piece (or Nothing) at other positions
                 maybePiece
         )
         board
 
 
--- Remove a piece from the specified position on the board
--- Sets the position to Nothing (empty)
--- Used when moving a piece (remove from old position before placing at new one)
--- Also used when capturing opponent's pieces (not yet implemented)
--- Example: removePiece 5 board -> board with position 5 now empty
 removePiece : Int -> Board -> Board
 removePiece pos board =
     List.indexedMap
         (\index maybePiece ->
             if index == pos then
-                Nothing  -- Clear this position
+                Nothing
             else
-                maybePiece  -- Keep other positions unchanged
+                maybePiece
         )
         board
 
--- takes position to fly to, piece to move, and current board state. returns updated board
+
 handleFlyingClick : Int -> Piece -> Board -> Board
 handleFlyingClick pos piece board =
     if getPieceAt pos board == Nothing then
         placePiece pos piece.color board
-        |> removePiece piece.position 
+        |> removePiece piece.position
     else
         board
 
--- Switch to the other player (White -> Black or Black -> White)
--- Called after each successful turn to alternate players
+
+-- Can remove if: not in mill OR all opponent pieces are in mills
+canRemovePiece : Position -> Color -> Board -> Bool
+canRemovePiece pos color board =
+    let
+        piece = { color = color, position = pos }
+        pieceInMill = isMill piece board
+    in
+    if not pieceInMill then
+        True
+    else
+        let
+            opponentPieces = getPiecesForPlayer color board
+            allInMills = List.all (\p -> isMill p board) opponentPieces
+        in
+        allInMills
+
+
 nextPlayer : Color -> Color
 nextPlayer color =
     case color of
-        White -> Black  -- If White just played, Black plays next
-        Black -> White  -- If Black just played, White plays next
+        White -> Black
+        Black -> White
 
 checkWin : Board -> Color -> Model -> Bool
 checkWin board color model =
@@ -374,44 +396,46 @@ checkWin board color model =
             |> List.all isNothing
             |> not
 
+-- ============================================================================
 -- VIEW
--- Renders the user interface
+-- ============================================================================
 
--- Render the game UI: current player display, game board, and reset button
--- This is called automatically by Elm whenever the model changes
+getPhaseMessage : GamePhase -> String
+getPhaseMessage phase =
+    case phase of
+        Placement -> "Place your pieces on the board"
+        Movement -> "Move your piece to an adjacent position"
+        Flying -> "Fly your piece to any empty position"
+        Removing -> "Mill formed! Remove an opponent's piece"
+
+
 view : Model -> Html Msg
 view model =
-    div [ class "min-h-screen bg-gray-900 flex flex-col items-center justify-center p-8" ]
-        [ -- GAME HEADER
-          -- Shows which player's turn it is
-          div [ class "text-white text-2xl mb-8" ]
-            [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
-
-        , -- GAME BOARD
-          -- Renders the actual Nine Men's Morris board with all pieces
-          -- Passes the selected piece (if any) for highlighting
-          -- Passes callback functions for when user clicks positions or pieces
-          viewBoard model.gameState.selectedPiece (boardToPieces model.board) ClickedPosition ClickedPiece
-
-        , -- GAME CONTROLS
-          -- Reset button to start a new game
-          button
-            [ class "mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition-colors"
-            , onClick NewGame
+    div [ class "min-h-screen flex flex-col items-center justify-center p-4" ]
+        [ div [ class "flex flex-col items-center justify-center w-full max-w-2xl mx-auto" ]
+            [ div [ class "text-center mb-4" ]
+                [ div [ class "text-white text-xl mb-1" ]
+                    [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
+                , div [ class "text-gray-300 text-base" ]
+                    [ text (getPhaseMessage model.gameState.phase) ]
+                ]
+            , div [ class "w-full max-w-lg mx-auto" ]
+                [ viewBoard model.gameState.selectedPiece (boardToPieces model.board) ClickedPosition ClickedPiece ]
+            , button
+                [ class "mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+                , onClick NewGame
+                ]
+                [ text "Game Reset" ]
             ]
-            [ text "Game Reset" ]
         ]
 
 
 -- MAIN
--- Application entry point
 
--- Sets up the Elm architecture with Model-View-Update pattern
--- Browser.sandbox is used for simple apps without side effects
 main : Program () Model Msg
 main =
     Browser.sandbox
-        { init = init       -- Initial model state
-        , view = view       -- How to render the model to HTML
-        , update = update   -- How to update the model based on messages
+        { init = init
+        , view = view
+        , update = update
         }
