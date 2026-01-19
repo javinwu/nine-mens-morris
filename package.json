@@ -1,6 +1,8 @@
 {
   "scripts": {
     "dev": "elm-live src/Main.elm --dir=public --open -- --output=public/elm.js",
+    "build": "npm run build:elm && npm run build:css",
+    "build:elm": "elm make src/Main.elm --output=public/elm.js --optimize",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/styles.css --minify",
     "watch:css": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/styles.css --watch"
   },
