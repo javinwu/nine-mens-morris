@@ -375,17 +375,6 @@ removePiece pos board =
         board
 
 
-{-
-handleFlyingClick : Int -> Piece -> Board -> Board
-handleFlyingClick pos piece board =
-    if getPieceAt pos board == Nothing then
-        placePiece pos piece.color board
-        |> removePiece piece.position
-    else
-        board
--}
-
-
 -- Can remove if: not in mill OR all opponent pieces are in mills
 canRemovePiece : Position -> Color -> Board -> Bool
 canRemovePiece pos color board =
