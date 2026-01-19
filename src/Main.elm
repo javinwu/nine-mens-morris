@@ -22,6 +22,7 @@ import Html exposing (Html, div, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Svg exposing (Svg)
+import Maybe.Extra exposing (isNothing)
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill)
@@ -168,7 +169,7 @@ handlePlacement pos model =
     if getPieceAt pos model.board == Nothing && canPlacePiece currentPlayer model.gameState then
         let
             -- Place the new piece on the board
-            newBoard = placePiece pos currentPlayer model.board -- TODO: implement isMill ===================================================================================================================
+            newBoard = placePiece pos currentPlayer model.board
 
             -- Update the count of pieces placed for each player
             -- Only increment the count for the current player
@@ -229,7 +230,7 @@ attemptMove pos model =
                                 -- Step 1: Remove piece from its old position
                                 boardWithRemoved = removePiece selectedPos model.board
                                 -- Step 2: Place piece at the new position
-                                newBoard = placePiece pos selectedColor boardWithRemoved -- TODO: implement isMill ===================================================================================================================
+                                newBoard = placePiece pos selectedColor boardWithRemoved
 
                                 -- Update game state: switch to next player, clear selection
                                 newGameState =
@@ -331,6 +332,7 @@ removePiece pos board =
         )
         board
 
+-- takes position to fly to, piece to move, and current board state. returns updated board
 handleFlyingClick : Int -> Piece -> Board -> Board
 handleFlyingClick pos piece board =
     if getPieceAt pos board == Nothing then
@@ -347,6 +349,30 @@ nextPlayer color =
         White -> Black  -- If White just played, Black plays next
         Black -> White  -- If Black just played, White plays next
 
+checkWin : Board -> Color -> Model -> Bool
+checkWin board color model =
+    if color == White then
+        if model.gameState.whitePiecesLeft <= 2 then
+            True
+        else
+            let
+                pieces = getPiecesForPlayer color board
+            in
+            List.map getPieceAt (List.concatMap getAdjacencies pieces)
+            |> List.map (\getPiece -> getPiece board)
+            |> List.all isNothing
+            |> not
+    else
+        if model.gameState.blackPiecesLeft <= 2 then
+            True
+        else
+            let
+                pieces = getPiecesForPlayer color board
+            in
+            List.map getPieceAt (List.concatMap getAdjacencies pieces)
+            |> List.map (\getPiece -> getPiece board)
+            |> List.all isNothing
+            |> not
 
 -- VIEW
 -- Renders the user interface
