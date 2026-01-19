@@ -21,7 +21,6 @@ BOARD LAYOUT (positions 0-23):
      6 --------- 5 --------- 4
 -}
 
-import List.Extra exposing (elemIndex)
 import Types exposing (Piece, Color)
 
 

@@ -27,7 +27,7 @@ import Browser
 import Html exposing (Html, div, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import Svg exposing (Svg)
+--import Svg exposing (Svg) ==========================================================================================================================================================================================================================================================================================================
 import List exposing (length)
 import Maybe.Extra exposing (isNothing)
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
