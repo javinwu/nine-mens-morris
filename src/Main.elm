@@ -85,7 +85,7 @@ update msg model =
                 let
                     gs = model.gameState
                 in
-                { model | gameState = { gs | selectedPiece = Nothing } }
+                { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [] } }
 
         NewGame ->
             init
@@ -105,15 +105,16 @@ handleMovementClick pos model =
                 if color == model.gameState.currentPlayer then
                     let
                         gs = model.gameState
+                        validPositions = getValidMovePositions pos model.gameState.phase model.board
                     in
-                    { model | gameState = { gs | selectedPiece = Just pos } }
+                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions } }
                 else
                     case model.gameState.selectedPiece of
                         Just _ ->
                             let
                                 gs = model.gameState
                             in
-                            { model | gameState = { gs | selectedPiece = Nothing } }
+                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [] } }
                         Nothing ->
                             model
             Nothing ->
@@ -163,6 +164,7 @@ handlePlacement pos model =
                 , whitePiecesLeft = model.gameState.whitePiecesLeft
                 , blackPiecesLeft = model.gameState.blackPiecesLeft
                 , nextPhaseAfterRemove = nextPhaseAfterRemove
+                , validMovePositions = []
                 }
         in
         { model | board = newBoard, gameState = newGameState }
@@ -227,6 +229,7 @@ attemptMove pos model =
                                     , whitePiecesLeft = model.gameState.whitePiecesLeft
                                     , blackPiecesLeft = model.gameState.blackPiecesLeft
                                     , nextPhaseAfterRemove = nextPhaseAfterRemove
+                                    , validMovePositions = []
                                     }
                             in
                             { model | board = newBoard, gameState = newGameState }
@@ -270,6 +273,7 @@ handleRemovePiece pos model =
                             , whitePiecesLeft = newWhiteLeft
                             , blackPiecesLeft = newBlackLeft
                             , nextPhaseAfterRemove = Nothing
+                            , validMovePositions = []
                             }
 
                         basePhase = Maybe.withDefault Movement model.gameState.nextPhaseAfterRemove
@@ -293,6 +297,35 @@ handleRemovePiece pos model =
 
 
 -- HELPER FUNCTIONS
+
+{-| Calculate valid move positions for a selected piece
+For Movement phase: returns empty adjacent positions
+For Flying phase: returns all empty positions on the board
+-}
+getValidMovePositions : Position -> GamePhase -> Board -> List Position
+getValidMovePositions selectedPos phase board =
+    case getPieceAt selectedPos board of
+        Just _ ->
+            let
+                emptyPositions =
+                    List.range 0 23
+                        |> List.filter (\pos -> isPositionEmpty pos board)
+            in
+            if phase == Flying then
+                -- Flying: can move to any empty position
+                emptyPositions
+            else if phase == Movement then
+                -- Movement: can only move to adjacent empty positions
+                let
+                    selectedPiece = { color = White, position = selectedPos }  -- color doesn't matter for adjacency
+                    adjacentPositions = getAdjacencies selectedPiece
+                in
+                List.filter (\pos -> List.member pos adjacentPositions) emptyPositions
+            else
+                []
+        Nothing ->
+            []
+
 
 boardToPieces : Board -> List Piece
 boardToPieces board =
@@ -417,7 +450,7 @@ view model =
                     [ text (getPhaseMessage model.gameState.phase) ]
                 ]
             , div [ class "w-full max-w-lg mx-auto" ]
-                [ viewBoard model.gameState.selectedPiece (boardToPieces model.board) ClickedPosition ClickedPiece ]
+                [ viewBoard model.gameState.selectedPiece model.gameState.validMovePositions (boardToPieces model.board) ClickedPosition ClickedPiece ]
             , button
                 [ class "mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
                 , onClick NewGame

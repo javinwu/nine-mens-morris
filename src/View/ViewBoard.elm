@@ -10,16 +10,32 @@ import BoardData exposing (boardPositions)
 
 {-| Creates a clickable circle at the given position
 These circles show where pieces can be placed on the board
+Highlighted circles indicate valid move positions for the selected piece
 -}
-positionCircle : Int -> (Int, Int) -> (Int -> msg) -> Svg msg
-positionCircle index (x, y) onClickMsg =
+positionCircle : Int -> (Int, Int) -> Bool -> (Int -> msg) -> Svg msg
+positionCircle index (x, y) isHighlighted onClickMsg =
+    let
+        styles =
+            if isHighlighted then
+                { fillColor = "#32CD32"  -- bright green for valid moves
+                , strokeColor = "#00FF00"  -- bright green border
+                , strokeW = "4"
+                , radius = "12"
+                }
+            else
+                { fillColor = "#8B7355"  -- default wood color
+                , strokeColor = "#5D4E37"  -- darker brown border
+                , strokeW = "3"
+                , radius = "10"
+                }
+    in
     circle
         [ cx (String.fromInt x)
         , cy (String.fromInt y)
-        , r "10"
-        , fill "#8B7355"  -- darker wood color for visibility
-        , stroke "#5D4E37"  -- even darker brown border
-        , strokeWidth "3"
+        , r styles.radius
+        , fill styles.fillColor
+        , stroke styles.strokeColor
+        , strokeWidth styles.strokeW
         , onClick (onClickMsg index)
         , Svg.Attributes.style "cursor: pointer; transition: all 0.2s;"
         ]
@@ -30,9 +46,10 @@ positionCircle index (x, y) onClickMsg =
     The board has 24 positions arranged in 3 concentric squares
     Players place pieces on the intersection points (circles)
     Board is centered in the SVG with proper padding
+    validMovePositions highlights positions where the selected piece can move
     -}
-viewBoard : Maybe Position -> List Piece -> (Int -> msg) -> (Int -> msg) -> Html msg
-viewBoard selectedPiece pieces onPositionClick onPieceClick =
+viewBoard : Maybe Position -> List Position -> List Piece -> (Int -> msg) -> (Int -> msg) -> Html msg
+viewBoard selectedPiece validMovePositions pieces onPositionClick onPieceClick =
     svg
         [ class "w-full h-auto"  -- constrained responsive sizing
         , viewBox "0 0 500 500"  -- defines the coordinate system
@@ -76,7 +93,13 @@ viewBoard selectedPiece pieces onPositionClick onPieceClick =
          ]
          -- White circles show where players can place their pieces
          -- These are at all the line intersections (24 total)
-         ++ List.indexedMap (\index pos -> positionCircle index pos onPositionClick) boardPositions
+         -- Highlighted circles show valid move positions for the selected piece
+         ++ List.indexedMap (\index pos ->
+             let
+                 isHighlighted = List.member index validMovePositions
+             in
+             positionCircle index pos isHighlighted onPositionClick
+         ) boardPositions
          -- Render the actual game pieces on top
          ++ List.filterMap (viewPiece selectedPiece onPieceClick) pieces
         ) 

@@ -32,6 +32,7 @@ type alias GameState =
   , whitePiecesLeft : Int
   , blackPiecesLeft : Int
   , nextPhaseAfterRemove : Maybe GamePhase
+  , validMovePositions : List Position
   }
 
 
@@ -58,6 +59,7 @@ initialGameState =
   , whitePiecesLeft = 9
   , blackPiecesLeft = 9
   , nextPhaseAfterRemove = Nothing
+  , validMovePositions = []
   }
 
 
