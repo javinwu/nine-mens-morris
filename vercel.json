@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npx elm-tooling install && npm run build",
   "outputDirectory": "public"
 }

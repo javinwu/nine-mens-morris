@@ -2,13 +2,14 @@
   "scripts": {
     "dev": "elm-live src/Main.elm --dir=public --open -- --output=public/elm.js",
     "build": "npm run build:elm && npm run build:css",
-    "build:elm": "elm make src/Main.elm --output=public/elm.js --optimize",
+    "build:elm": "npx elm make src/Main.elm --output=public/elm.js --optimize",
     "build:css": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/styles.css --minify",
     "watch:css": "npx @tailwindcss/cli -i ./src/styles/input.css -o ./public/styles.css --watch"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
     "elm-live": "^4.0.2",
+    "elm-tooling": "^1.17.0",
     "lightningcss-cli": "^1.30.2",
     "tailwindcss": "^4.1.18"
   }
