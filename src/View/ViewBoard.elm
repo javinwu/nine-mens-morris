@@ -47,19 +47,22 @@ positionCircle index (x, y) isHighlighted onClickMsg =
     Players place pieces on the intersection points (circles)
     Board is centered in the SVG with proper padding
     validMovePositions highlights positions where the selected piece can move
+    millPositions highlights pieces that form a mill
     -}
-viewBoard : Maybe Position -> List Position -> List Piece -> (Int -> msg) -> (Int -> msg) -> Html msg
-viewBoard selectedPiece validMovePositions pieces onPositionClick onPieceClick =
+viewBoard : Maybe Position -> List Position -> List Position -> List Piece -> (Int -> msg) -> (Int -> msg) -> Html msg
+viewBoard selectedPiece validMovePositions millPositions pieces onPositionClick onPieceClick =
     svg
         [ class "w-full h-auto"  -- constrained responsive sizing
         , viewBox "0 0 500 500"  -- defines the coordinate system
         ]
-        ([ -- Wood background for entire SVG
+        ([ -- Wood background for entire SVG with rounded corners
            Svg.rect
              [ Svg.Attributes.x "0"
              , Svg.Attributes.y "0"
              , Svg.Attributes.width "500"
              , Svg.Attributes.height "500"
+             , Svg.Attributes.rx "24"  -- rounded corners
+             , Svg.Attributes.ry "24"  -- rounded corners
              , fill "#D2B48C"  -- tan/wood color background
              ]
              []
@@ -101,5 +104,5 @@ viewBoard selectedPiece validMovePositions pieces onPositionClick onPieceClick =
              positionCircle index pos isHighlighted onPositionClick
          ) boardPositions
          -- Render the actual game pieces on top
-         ++ List.filterMap (viewPiece selectedPiece onPieceClick) pieces
+         ++ List.filterMap (viewPiece selectedPiece millPositions onPieceClick) pieces
         ) 

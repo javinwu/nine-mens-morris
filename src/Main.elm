@@ -24,15 +24,15 @@ GAME PHASES:
 -}
 
 import Browser
-import Html exposing (Html, div, text, button)
+import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
 --import Svg exposing (Svg) ==========================================================================================================================================================================================================================================================================================================
 import List exposing (length)
 import Maybe.Extra exposing (isNothing)
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill)
+import View.UI exposing (nextGameButton)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getMillPositions)
 
 
 -- MODEL
@@ -85,7 +85,7 @@ update msg model =
                 let
                     gs = model.gameState
                 in
-                { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [] } }
+                { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
 
         NewGame ->
             init
@@ -107,14 +107,14 @@ handleMovementClick pos model =
                         gs = model.gameState
                         validPositions = getValidMovePositions pos model.gameState.phase model.board
                     in
-                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions } }
+                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions, millPositions = [] } }
                 else
                     case model.gameState.selectedPiece of
                         Just _ ->
                             let
                                 gs = model.gameState
                             in
-                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [] } }
+                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
                         Nothing ->
                             model
             Nothing ->
@@ -137,6 +137,7 @@ handlePlacement pos model =
             newBoard = placePiece pos currentPlayer model.board
             placedPiece = { color = currentPlayer, position = pos }
             formedMill = isMill placedPiece newBoard
+            millPos = if formedMill then getMillPositions placedPiece newBoard else []
 
             (newWhiteCount, newBlackCount) =
                 case currentPlayer of
@@ -165,6 +166,7 @@ handlePlacement pos model =
                 , blackPiecesLeft = model.gameState.blackPiecesLeft
                 , nextPhaseAfterRemove = nextPhaseAfterRemove
                 , validMovePositions = []
+                , millPositions = millPos
                 }
         in
         { model | board = newBoard, gameState = newGameState }
@@ -212,6 +214,7 @@ attemptMove pos model =
                                 newBoard = placePiece pos selectedColor boardWithRemoved
                                 movedPiece = { color = selectedColor, position = pos }
                                 formedMill = isMill movedPiece newBoard
+                                millPos = if formedMill then getMillPositions movedPiece newBoard else []
                                 basePhase = determinePhaseForPlayer model.gameState.currentPlayer newBoard model.gameState
 
                                 (newPhase, nextPhaseAfterRemove) =
@@ -230,6 +233,7 @@ attemptMove pos model =
                                     , blackPiecesLeft = model.gameState.blackPiecesLeft
                                     , nextPhaseAfterRemove = nextPhaseAfterRemove
                                     , validMovePositions = []
+                                    , millPositions = millPos
                                     }
                             in
                             { model | board = newBoard, gameState = newGameState }
@@ -274,6 +278,7 @@ handleRemovePiece pos model =
                             , blackPiecesLeft = newBlackLeft
                             , nextPhaseAfterRemove = Nothing
                             , validMovePositions = []
+                            , millPositions = []
                             }
 
                         basePhase = Maybe.withDefault Movement model.gameState.nextPhaseAfterRemove
@@ -428,23 +433,65 @@ getPhaseMessage phase =
         GameOver -> "Game over! Reset the board to play again."
 
 
+{-| Get piece counts for display
+Returns (on board, in hand) for the given color
+-}
+getPieceCounts : Color -> GameState -> Board -> (Int, Int)
+getPieceCounts color gameState board =
+    let
+        onBoard = List.length (getPiecesForPlayer color board)
+        placed = case color of
+            White -> gameState.whitePiecesPlaced
+            Black -> gameState.blackPiecesPlaced
+        inHand = 9 - placed
+    in
+    (onBoard, inHand)
+
+
+viewPieceCount : Color -> GameState -> Board -> Html Msg
+viewPieceCount color gameState board =
+    let
+        (onBoard, inHand) = getPieceCounts color gameState board
+        colorName = playerToString color
+        bgColor = case color of
+            White -> "bg-gray-100"
+            Black -> "bg-gray-800"
+        textColor = case color of
+            White -> "text-gray-900"
+            Black -> "text-white"
+        borderColor =
+            if gameState.currentPlayer == color then
+                "border-yellow-400 border-4"
+            else
+                "border-gray-500 border-2"
+    in
+    div [ class ("px-4 py-3 rounded-lg " ++ bgColor ++ " " ++ textColor ++ " " ++ borderColor) ]
+        [ div [ class "font-bold text-2xl mb-1" ] [ text colorName ]
+        , div [ class "text-lg" ] [ text ("On board: " ++ String.fromInt onBoard) ]
+        , if gameState.phase == Placement then
+            div [ class "text-lg" ] [ text ("In hand: " ++ String.fromInt inHand) ]
+          else
+            text ""
+        ]
+
+
 view : Model -> Html Msg
 view model =
     div [ class "min-h-screen flex flex-col items-center justify-center p-4" ]
         [ div [ class "flex flex-col items-center justify-center w-full max-w-2xl mx-auto" ]
             [ div [ class "text-center mb-4" ]
-                [ div [ class "text-white text-xl mb-1" ]
+                [ div [ class "text-white text-3xl mb-1" ]
                     [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
-                , div [ class "text-gray-300 text-base" ]
+                , div [ class "text-gray-300 text-xl" ]
                     [ text (getPhaseMessage model.gameState.phase) ]
                 ]
-            , div [ class "w-full max-w-lg mx-auto" ]
-                [ viewBoard model.gameState.selectedPiece model.gameState.validMovePositions (boardToPieces model.board) ClickedPosition ClickedPiece ]
-            , button
-                [ class "mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-                , onClick NewGame
+            , div [ class "flex justify-center gap-4 mb-4 w-full max-w-lg" ]
+                [ viewPieceCount Black model.gameState model.board
+                , viewPieceCount White model.gameState model.board
                 ]
-                [ text "Game Reset" ]
+            , div [ class "w-full max-w-lg mx-auto" ]
+                [ viewBoard model.gameState.selectedPiece model.gameState.validMovePositions model.gameState.millPositions (boardToPieces model.board) ClickedPosition ClickedPiece ]
+            , nextGameButton NewGame
             ]
         ]
 

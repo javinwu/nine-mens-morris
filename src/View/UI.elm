@@ -1,3 +1,16 @@
-module View.UI exposing (..)
+module View.UI exposing (nextGameButton)
 
--- Add your UI components here
+import Html exposing (Html, button, text)
+import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
+
+
+{-| Minimalistic rounded button for starting next game
+-}
+nextGameButton : msg -> Html msg
+nextGameButton onClickMsg =
+    button
+        [ class "next-game-button"
+        , onClick onClickMsg
+        ]
+        [ text "New Game" ]
