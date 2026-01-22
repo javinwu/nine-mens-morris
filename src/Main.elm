@@ -26,6 +26,8 @@ GAME PHASES:
 import Browser
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
+import Time
 --import Svg exposing (Svg) ==========================================================================================================================================================================================================================================================================================================
 import List exposing (length)
 import Maybe.Extra exposing (isNothing)
@@ -40,14 +42,20 @@ import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getM
 type alias Model =
     { board : Board
     , gameState : GameState
+    , elapsedTime : Int
+    , timerRunning : Bool
     }
 
 
-init : Model
-init =
-    { board = emptyBoard
-    , gameState = initialGameState
-    }
+init :() -> ( Model, Cmd Msg )
+init _ =
+    ( { board = emptyBoard
+      , gameState = initialGameState
+      , elapsedTime = 0
+      , timerRunning = False
+      }
+    , Cmd.none
+    )
 
 
 -- MESSAGES
@@ -57,41 +65,57 @@ type Msg
     | ClickedPiece Position
     | NewGame
     | NoOp
+    | Tick Time.Posix
 
 
 
 -- UPDATE
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ClickedPiece pos ->
-            if model.gameState.phase == Removing then
-                handleRemovePiece pos model
+        Tick _ ->
+            if model.timerRunning then
+                ( { model | elapsedTime = model.elapsedTime + 1 }, Cmd.none )
             else
-                handleMovementClick pos model
+                ( model, Cmd.none )
 
-        ClickedPosition pos ->
-            if model.gameState.phase == Placement then
-                handlePlacement pos model
-            else if model.gameState.phase == Movement then
-                attemptMove pos model
-            else if model.gameState.phase == Flying then
-                attemptMove pos model
-            else if model.gameState.phase == Removing then
-                model
-            else
-                let
-                    gs = model.gameState
-                in
-                { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
+        ClickedPiece pos ->
+            let
+                updatedModel =
+                    if model.gameState.phase == Removing then
+                        handleRemovePiece pos model
+                    else
+                        handleMovementClick pos model
+            in
+            ( checkAndUpdateTimer updatedModel, Cmd.none )
 
         NewGame ->
-            init
+            init ()
 
         NoOp ->
-            model
+            ( model, Cmd.none )
+
+
+-- Check if timer should start or stop based on game state
+checkAndUpdateTimer : Model -> Model
+checkAndUpdateTimer model =
+    let
+        hasPlacedPieces = model.gameState.whitePiecesPlaced > 0 || model.gameState.blackPiecesPlaced > 0
+        shouldRun = hasPlacedPieces && model.gameState.phase /= GameOver
+    in
+    { model | timerRunning = shouldRun }
+
+
+-- SUBSCRIPTIONS
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    if model.timerRunning then
+        Time.every 10 Tick
+    else
+        Sub.none
 
 
 -- PHASE HANDLERS
@@ -421,6 +445,23 @@ checkWin board =
         else
             False
 
+
+-- Format time as MM:SS.CC
+formatTime : Int -> String
+formatTime centiseconds =
+    let
+        cs = modBy 100 centiseconds
+        totalSeconds = centiseconds // 100
+        seconds = modBy 60 totalSeconds
+        minutes = totalSeconds // 60
+    in
+    String.padLeft 2 '0' (String.fromInt minutes)
+        ++ ":"
+        ++ String.padLeft 2 '0' (String.fromInt seconds)
+        ++ "."
+        ++ String.padLeft 2 '0' (String.fromInt cs)
+
+
 -- VIEW
 
 getPhaseMessage : GamePhase -> String
@@ -481,6 +522,8 @@ view model =
         [ div [ class "flex flex-col items-center justify-center w-full max-w-2xl mx-auto" ]
             [ div [ class "text-center mb-4 h-24 flex flex-col justify-center" ]
                 [ div [ class "text-white text-3xl mb-1" ]
+                    [ text (formatTime model.elapsedTime) ]
+                , div [ class "text-white text-xl mb-1" ]
                     [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
                 , div [ class "text-gray-300 text-xl min-h-[2rem]" ]
                     [ text (getPhaseMessage model.gameState.phase) ]
@@ -491,7 +534,11 @@ view model =
                 ]
             , div [ class "w-full max-w-lg mx-auto" ]
                 [ viewBoard model.gameState.selectedPiece model.gameState.validMovePositions model.gameState.millPositions (boardToPieces model.board) ClickedPosition ClickedPiece ]
-            , nextGameButton NewGame
+            , button
+            [ class "mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
+            , onClick NewGame
+            ]
+            [ text "Game Reset" ]
             ]
         ]
 
@@ -500,8 +547,9 @@ view model =
 
 main : Program () Model Msg
 main =
-    Browser.sandbox
+    Browser.element
         { init = init
         , view = view
         , update = update
+        , subscriptions = subscriptions
         }
