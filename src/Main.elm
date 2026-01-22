@@ -479,10 +479,10 @@ view : Model -> Html Msg
 view model =
     div [ class "min-h-screen flex flex-col items-center justify-center p-4" ]
         [ div [ class "flex flex-col items-center justify-center w-full max-w-2xl mx-auto" ]
-            [ div [ class "text-center mb-4" ]
+            [ div [ class "text-center mb-4 h-24 flex flex-col justify-center" ]
                 [ div [ class "text-white text-3xl mb-1" ]
                     [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
-                , div [ class "text-gray-300 text-xl" ]
+                , div [ class "text-gray-300 text-xl min-h-[2rem]" ]
                     [ text (getPhaseMessage model.gameState.phase) ]
                 ]
             , div [ class "flex justify-center gap-4 mb-4 w-full max-w-lg" ]
