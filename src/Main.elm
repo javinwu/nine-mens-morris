@@ -24,7 +24,7 @@ GAME PHASES:
 -}
 
 import Browser
-import Html exposing (Html, div, text)
+import Html exposing (Html, div, text, button)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Time
@@ -88,6 +88,25 @@ update msg model =
                         handleRemovePiece pos model
                     else
                         handleMovementClick pos model
+            in
+            ( checkAndUpdateTimer updatedModel, Cmd.none )
+        
+        ClickedPosition pos ->
+            let
+                updatedModel =
+                    if model.gameState.phase == Placement then
+                        handlePlacement pos model
+                    else if model.gameState.phase == Movement then
+                        attemptMove pos model
+                    else if model.gameState.phase == Flying then
+                        attemptMove pos model
+                    else if model.gameState.phase == Removing then
+                        model
+                    else
+                        let
+                            gs = model.gameState
+                        in
+                        { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
             in
             ( checkAndUpdateTimer updatedModel, Cmd.none )
 
