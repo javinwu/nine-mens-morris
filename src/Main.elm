@@ -24,9 +24,8 @@ GAME PHASES:
 -}
 
 import Browser
-import Html exposing (Html, div, text, button)
+import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
-import Html.Events exposing (onClick)
 import Time
 --import Svg exposing (Svg) ==========================================================================================================================================================================================================================================================================================================
 import List exposing (length)
@@ -132,7 +131,7 @@ checkAndUpdateTimer model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if model.timerRunning then
-        Time.every 10 Tick
+        Time.every 1000 Tick
     else
         Sub.none
 
@@ -465,20 +464,19 @@ checkWin board =
             False
 
 
--- Format time as MM:SS.CC
+-- Format time as HH:MM:SS
 formatTime : Int -> String
-formatTime centiseconds =
+formatTime totalSeconds =
     let
-        cs = modBy 100 centiseconds
-        totalSeconds = centiseconds // 100
         seconds = modBy 60 totalSeconds
         minutes = totalSeconds // 60
+        hours = minutes // 60
     in
-    String.padLeft 2 '0' (String.fromInt minutes)
+    String.padLeft 2 '0' (String.fromInt hours)
+        ++ ":"
+        ++ String.padLeft 2 '0' (String.fromInt minutes)
         ++ ":"
         ++ String.padLeft 2 '0' (String.fromInt seconds)
-        ++ "."
-        ++ String.padLeft 2 '0' (String.fromInt cs)
 
 
 -- VIEW
@@ -553,11 +551,7 @@ view model =
                 ]
             , div [ class "w-full max-w-lg mx-auto" ]
                 [ viewBoard model.gameState.selectedPiece model.gameState.validMovePositions model.gameState.millPositions (boardToPieces model.board) ClickedPosition ClickedPiece ]
-            , button
-            [ class "mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors"
-            , onClick NewGame
-            ]
-            [ text "Game Reset" ]
+            , nextGameButton NewGame
             ]
         ]
 
