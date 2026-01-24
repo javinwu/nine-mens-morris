@@ -403,23 +403,44 @@ nextPlayer color =
         White -> Black
         Black -> White
 
+-- Check if a player has any valid moves
+hasValidMoves : Color -> Board -> Bool
+hasValidMoves color board =
+    let
+        playerPieces = getPiecesForPlayer color board
+        piecesCount = List.length playerPieces
+    in
+    if piecesCount == 3 then
+        -- Flying phase: can move to any empty position
+        List.any (\pos -> isPositionEmpty pos board) (List.range 0 23)
+    else
+        -- Movement phase: check if any piece has an adjacent empty position
+        List.any
+            (\piece ->
+                let
+                    adjacentPositions = getAdjacencies piece
+                in
+                List.any (\pos -> isPositionEmpty pos board) adjacentPositions
+            )
+            playerPieces
+
+
 checkWin : Board -> Bool
 checkWin board =
-    if length (getPiecesForPlayer White board) <= 2 || length(getPiecesForPlayer Black board) <= 2 then --if one of the players has two pieces, game over
+    let
+        whitePieces = getPiecesForPlayer White board
+        blackPieces = getPiecesForPlayer Black board
+        whiteCount = List.length whitePieces
+        blackCount = List.length blackPieces
+    in
+    -- Game over if a player has 2 or fewer pieces
+    if whiteCount <= 2 || blackCount <= 2 then
+        True
+    -- Game over if a player has no valid moves
+    else if not (hasValidMoves White board) || not (hasValidMoves Black board) then
         True
     else
-        let
-            whitePieces = getPiecesForPlayer White board
-            blackPieces = getPiecesForPlayer Black board
-        in
-        if List.all isNothing (List.map (\getPiece -> getPiece board) (List.map getPieceAt (List.concatMap getAdjacencies whitePieces))) then   -- if white still has moves, check black
-            List.concatMap getAdjacencies blackPieces
-            |> List.map getPieceAt
-            |> List.map (\getPiece -> getPiece board)
-            |> List.all isNothing
-            |> not
-        else
-            False
+        False
 
 -- VIEW
 
@@ -475,6 +496,42 @@ viewPieceCount color gameState board =
         ]
 
 
+getWinner : Board -> String
+getWinner board =
+    let
+        whitePieces = List.length (getPiecesForPlayer White board)
+        blackPieces = List.length (getPiecesForPlayer Black board)
+        whiteHasMoves = hasValidMoves White board
+        blackHasMoves = hasValidMoves Black board
+    in
+    if whitePieces <= 2 || not whiteHasMoves then
+        playerToString Black
+    else if blackPieces <= 2 || not blackHasMoves then
+        playerToString White
+    else
+        ""
+
+
+viewGameOverScreen : Board -> Html Msg
+viewGameOverScreen board =
+    let
+        winner = getWinner board
+        winnerText = if winner /= "" then winner ++ " Wins!" else "Game Over"
+    in
+    div
+        [ class "fixed inset-0 flex flex-col items-center justify-center z-50"
+        , Html.Attributes.style "background-color" "#3e2723"
+        ]
+        [ div [ class "text-center" ]
+            [ div [ class "text-8xl font-bold text-amber-100 mb-8" ]
+                [ text "GAME OVER" ]
+            , div [ class "text-5xl font-bold text-amber-200 mb-12" ]
+                [ text winnerText ]
+            , nextGameButton NewGame
+            ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     div [ class "min-h-screen flex flex-col items-center justify-center p-4" ]
@@ -493,6 +550,10 @@ view model =
                 [ viewBoard model.gameState.selectedPiece model.gameState.validMovePositions model.gameState.millPositions (boardToPieces model.board) ClickedPosition ClickedPiece ]
             , nextGameButton NewGame
             ]
+        , if model.gameState.phase == GameOver then
+            viewGameOverScreen model.board
+          else
+            text ""
         ]
 
 
