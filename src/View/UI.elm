@@ -4,9 +4,6 @@ import Html exposing (Html, button, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 
-
-{-| Minimalistic rounded button for starting next game
--}
 nextGameButton : msg -> Html msg
 nextGameButton onClickMsg =
     button

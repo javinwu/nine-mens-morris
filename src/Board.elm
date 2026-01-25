@@ -63,40 +63,41 @@ isPositionEmpty : Int -> List (Maybe Piece) -> Bool
 isPositionEmpty position board =
   getPieceAt position board == Nothing
 
-
--- Check if piece forms a mill (3 in a row)
--- Checks ALL possible mills containing the piece's position
--- Note: Some positions (corners) can be part of multiple mills
 isMill : Piece -> List (Maybe Piece) -> Bool
 isMill piece board =
     possibleMills
-        -- Find all mills that have this position
         |> List.filter (\mill -> List.member piece.position mill)
-        -- Check if any of these mills are complete (all 3 positions same color)
         |> List.any (\mill ->
             mill
-                -- Get the color at each position
                 |> List.map (\pos -> getPieceAt pos board)
-                -- Check color
                 |> List.all (\color -> color == Just piece.color)
         )
 
-
--- Get the positions that form a mill for a given piece
--- Returns the list of 3 positions if the piece forms a mill, otherwise empty list
 getMillPositions : Piece -> List (Maybe Piece) -> List Int
 getMillPositions piece board =
     possibleMills
-        -- Find all mills that have this position
         |> List.filter (\mill -> List.member piece.position mill)
-        -- Find the first complete mill (all 3 positions same color)
         |> List.filter (\mill ->
             mill
-                -- Get the color at each position
                 |> List.map (\pos -> getPieceAt pos board)
-                -- Check color
                 |> List.all (\color -> color == Just piece.color)
         )
-        -- Return the first mill found, or empty list
         |> List.head
         |> Maybe.withDefault []
+
+getAllMillPositions : List (Maybe Piece) -> List Int
+getAllMillPositions board =
+    possibleMills
+        |> List.filter (\mill ->
+            let
+                colors = List.map (\pos -> getPieceAt pos board) mill
+                firstColor = List.head colors |> Maybe.andThen identity
+            in
+            case firstColor of
+                Just color ->
+                    List.all (\c -> c == Just color) colors
+                Nothing ->
+                    False
+        )
+        |> List.concat
+        |> List.foldl (\pos acc -> if List.member pos acc then acc else pos :: acc) []

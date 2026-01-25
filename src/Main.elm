@@ -27,16 +27,13 @@ import Browser
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Time
---import Svg exposing (Svg) ==========================================================================================================================================================================================================================================================================================================
 import List exposing (length)
 import Maybe.Extra exposing (isNothing)
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getMillPositions)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getMillPositions, getAllMillPositions)
 import Sounds exposing (playPlaceSound)
-
--- MODEL
 
 type alias Model =
     { board : Board
@@ -56,20 +53,12 @@ init _ =
     , Cmd.none
     )
 
-
--- MESSAGES
-
 type Msg
     = ClickedPosition Position
     | ClickedPiece Position
     | NewGame
     | NoOp
     | Tick Time.Posix
-
-
-
--- UPDATE
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -105,7 +94,7 @@ update msg model =
                         let
                             gs = model.gameState
                         in
-                        { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
+                        { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = getAllMillPositions model.board } }
 
                 -- Play sound if a piece was placed (board changed)
                 soundCmd =
@@ -122,8 +111,6 @@ update msg model =
         NoOp ->
             ( model, Cmd.none )
 
-
--- Check if timer should start or stop based on game state
 checkAndUpdateTimer : Model -> Model
 checkAndUpdateTimer model =
     let
@@ -132,19 +119,12 @@ checkAndUpdateTimer model =
     in
     { model | timerRunning = shouldRun }
 
-
--- SUBSCRIPTIONS
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if model.timerRunning then
         Time.every 1000 Tick
     else
         Sub.none
-
-
--- PHASE HANDLERS
-
 
 handleMovementClick : Position -> Model -> Model
 handleMovementClick pos model =
@@ -156,14 +136,14 @@ handleMovementClick pos model =
                         gs = model.gameState
                         validPositions = getValidMovePositions pos model.gameState.phase model.board
                     in
-                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions, millPositions = [] } }
+                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions, millPositions = getAllMillPositions model.board } }
                 else
                     case model.gameState.selectedPiece of
                         Just _ ->
                             let
                                 gs = model.gameState
                             in
-                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
+                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = getAllMillPositions model.board } }
                         Nothing ->
                             model
             Nothing ->
@@ -195,7 +175,6 @@ handlePlacement pos model =
 
             basePhase =
                 if newWhiteCount == 9 && newBlackCount == 9 then
-                    -- Check if next player has valid moves when transitioning from Placement
                     let
                         nextPlayerColor = nextPlayer currentPlayer
                         tempGameState =
@@ -208,7 +187,7 @@ handlePlacement pos model =
                             , blackPiecesLeft = model.gameState.blackPiecesLeft
                             , nextPhaseAfterRemove = Nothing
                             , validMovePositions = []
-                            , millPositions = []
+                            , millPositions = getAllMillPositions newBoard
                             }
                     in
                     determinePhaseForPlayer nextPlayerColor newBoard tempGameState
@@ -231,15 +210,13 @@ handlePlacement pos model =
                 , blackPiecesLeft = model.gameState.blackPiecesLeft
                 , nextPhaseAfterRemove = nextPhaseAfterRemove
                 , validMovePositions = []
-                , millPositions = millPos
+                , millPositions = getAllMillPositions newBoard
                 }
         in
         { model | board = newBoard, gameState = newGameState }
     else
         model
 
-
--- Returns GameOver if game is over, Flying if player has 3 pieces, otherwise Movement
 determinePhaseForPlayer : Color -> Board -> GameState -> GamePhase
 determinePhaseForPlayer color board gameState =
     let
@@ -298,7 +275,7 @@ attemptMove pos model =
                                     , blackPiecesLeft = model.gameState.blackPiecesLeft
                                     , nextPhaseAfterRemove = nextPhaseAfterRemove
                                     , validMovePositions = []
-                                    , millPositions = millPos
+                                    , millPositions = getAllMillPositions newBoard
                                     }
                             in
                             { model | board = newBoard, gameState = newGameState }
@@ -310,10 +287,6 @@ attemptMove pos model =
                 model
         Nothing ->
             model
-
-
-
--- REMOVING - Handle piece removal after forming a mill
 
 handleRemovePiece : Position -> Model -> Model
 handleRemovePiece pos model =
@@ -343,7 +316,7 @@ handleRemovePiece pos model =
                             , blackPiecesLeft = newBlackLeft
                             , nextPhaseAfterRemove = Nothing
                             , validMovePositions = []
-                            , millPositions = []
+                            , millPositions = getAllMillPositions newBoard
                             }
 
                         basePhase = Maybe.withDefault Movement model.gameState.nextPhaseAfterRemove
@@ -364,14 +337,6 @@ handleRemovePiece pos model =
         Nothing ->
             model
 
-
-
--- HELPER FUNCTIONS
-
-{-| Calculate valid move positions for a selected piece
-For Movement phase: returns empty adjacent positions
-For Flying phase: returns all empty positions on the board
--}
 getValidMovePositions : Position -> GamePhase -> Board -> List Position
 getValidMovePositions selectedPos phase board =
     case getPieceAt selectedPos board of
@@ -382,12 +347,10 @@ getValidMovePositions selectedPos phase board =
                         |> List.filter (\pos -> isPositionEmpty pos board)
             in
             if phase == Flying then
-                -- Flying: can move to any empty position
                 emptyPositions
             else if phase == Movement then
-                -- Movement: can only move to adjacent empty positions
                 let
-                    selectedPiece = { color = White, position = selectedPos }  -- color doesn't matter for adjacency
+                    selectedPiece = { color = White, position = selectedPos }
                     adjacentPositions = getAdjacencies selectedPiece
                 in
                 List.filter (\pos -> List.member pos adjacentPositions) emptyPositions
@@ -444,8 +407,6 @@ removePiece pos board =
         )
         board
 
-
--- Can remove if: not in mill OR all opponent pieces are in mills
 canRemovePiece : Position -> Color -> Board -> Bool
 canRemovePiece pos color board =
     let
@@ -468,7 +429,6 @@ nextPlayer color =
         White -> Black
         Black -> White
 
--- Check if a player has any valid moves
 hasValidMoves : Color -> Board -> Bool
 hasValidMoves color board =
     let
@@ -476,10 +436,8 @@ hasValidMoves color board =
         piecesCount = List.length playerPieces
     in
     if piecesCount == 3 then
-        -- Flying phase: can move to any empty position
         List.any (\pos -> isPositionEmpty pos board) (List.range 0 23)
     else
-        -- Movement phase: check if any piece has an adjacent empty position
         List.any
             (\piece ->
                 let
@@ -496,17 +454,13 @@ checkWin currentPlayer board =
         playerPieces = getPiecesForPlayer currentPlayer board
         playerCount = List.length playerPieces
     in
-    -- Game over if the current player has 2 or fewer pieces
     if playerCount <= 2 then
         True
-    -- Game over if the current player has no valid moves
     else if not (hasValidMoves currentPlayer board) then
         True
     else
         False
 
-
--- Format time as MM:SS
 formatTime : Int -> String
 formatTime totalSeconds =
     let
@@ -517,9 +471,6 @@ formatTime totalSeconds =
         ++ ":"
         ++ String.padLeft 2 '0' (String.fromInt seconds)
 
-
--- VIEW
-
 getPhaseMessage : GamePhase -> String
 getPhaseMessage phase =
     case phase of
@@ -529,10 +480,6 @@ getPhaseMessage phase =
         Removing -> "Mill formed! Remove an opponent's piece"
         GameOver -> "Game over! Reset the board to play again."
 
-
-{-| Get piece counts for display
-Returns (on board, in hand) for the given color
--}
 getPieceCounts : Color -> GameState -> Board -> (Int, Int)
 getPieceCounts color gameState board =
     let
@@ -633,9 +580,6 @@ view model =
           else
             text ""
         ]
-
-
--- MAIN
 
 main : Program () Model Msg
 main =

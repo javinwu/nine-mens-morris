@@ -24,9 +24,6 @@ boardPositions =
     , (200, 250)                           -- left-center
     ]
 
-
-{-| Convert a position index to (x, y) coordinates
--}
 positionToCoordinates : Int -> Maybe (Int, Int)
 positionToCoordinates pos =
     List.drop pos boardPositions

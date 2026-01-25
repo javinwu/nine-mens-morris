@@ -80,6 +80,271 @@ function A9(fun, a, b, c, d, e, f, g, h, i) {
 console.warn('Compiled in DEV mode. Follow the advice at https://elm-lang.org/0.19.1/optimize for better performance and smaller assets.');
 
 
+// EQUALITY
+
+function _Utils_eq(x, y)
+{
+	for (
+		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
+		isEqual && (pair = stack.pop());
+		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
+		)
+	{}
+
+	return isEqual;
+}
+
+function _Utils_eqHelp(x, y, depth, stack)
+{
+	if (x === y)
+	{
+		return true;
+	}
+
+	if (typeof x !== 'object' || x === null || y === null)
+	{
+		typeof x === 'function' && _Debug_crash(5);
+		return false;
+	}
+
+	if (depth > 100)
+	{
+		stack.push(_Utils_Tuple2(x,y));
+		return true;
+	}
+
+	/**/
+	if (x.$ === 'Set_elm_builtin')
+	{
+		x = $elm$core$Set$toList(x);
+		y = $elm$core$Set$toList(y);
+	}
+	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	/**_UNUSED/
+	if (x.$ < 0)
+	{
+		x = $elm$core$Dict$toList(x);
+		y = $elm$core$Dict$toList(y);
+	}
+	//*/
+
+	for (var key in x)
+	{
+		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+var _Utils_equal = F2(_Utils_eq);
+var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
+
+
+
+// COMPARISONS
+
+// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
+// the particular integer values assigned to LT, EQ, and GT.
+
+function _Utils_cmp(x, y, ord)
+{
+	if (typeof x !== 'object')
+	{
+		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
+	}
+
+	/**/
+	if (x instanceof String)
+	{
+		var a = x.valueOf();
+		var b = y.valueOf();
+		return a === b ? 0 : a < b ? -1 : 1;
+	}
+	//*/
+
+	/**_UNUSED/
+	if (typeof x.$ === 'undefined')
+	//*/
+	/**/
+	if (x.$[0] === '#')
+	//*/
+	{
+		return (ord = _Utils_cmp(x.a, y.a))
+			? ord
+			: (ord = _Utils_cmp(x.b, y.b))
+				? ord
+				: _Utils_cmp(x.c, y.c);
+	}
+
+	// traverse conses until end of a list or a mismatch
+	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
+	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
+}
+
+var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
+var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
+var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
+var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
+
+var _Utils_compare = F2(function(x, y)
+{
+	var n = _Utils_cmp(x, y);
+	return n < 0 ? $elm$core$Basics$LT : n ? $elm$core$Basics$GT : $elm$core$Basics$EQ;
+});
+
+
+// COMMON VALUES
+
+var _Utils_Tuple0_UNUSED = 0;
+var _Utils_Tuple0 = { $: '#0' };
+
+function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
+function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
+
+function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
+function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
+
+function _Utils_chr_UNUSED(c) { return c; }
+function _Utils_chr(c) { return new String(c); }
+
+
+// RECORDS
+
+function _Utils_update(oldRecord, updatedFields)
+{
+	var newRecord = {};
+
+	for (var key in oldRecord)
+	{
+		newRecord[key] = oldRecord[key];
+	}
+
+	for (var key in updatedFields)
+	{
+		newRecord[key] = updatedFields[key];
+	}
+
+	return newRecord;
+}
+
+
+// APPEND
+
+var _Utils_append = F2(_Utils_ap);
+
+function _Utils_ap(xs, ys)
+{
+	// append Strings
+	if (typeof xs === 'string')
+	{
+		return xs + ys;
+	}
+
+	// append Lists
+	if (!xs.b)
+	{
+		return ys;
+	}
+	var root = _List_Cons(xs.a, ys);
+	xs = xs.b
+	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		curr = curr.b = _List_Cons(xs.a, ys);
+	}
+	return root;
+}
+
+
+
+var _List_Nil_UNUSED = { $: 0 };
+var _List_Nil = { $: '[]' };
+
+function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
+function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
+
+
+var _List_cons = F2(_List_Cons);
+
+function _List_fromArray(arr)
+{
+	var out = _List_Nil;
+	for (var i = arr.length; i--; )
+	{
+		out = _List_Cons(arr[i], out);
+	}
+	return out;
+}
+
+function _List_toArray(xs)
+{
+	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
+	{
+		out.push(xs.a);
+	}
+	return out;
+}
+
+var _List_map2 = F3(function(f, xs, ys)
+{
+	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
+	{
+		arr.push(A2(f, xs.a, ys.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map3 = F4(function(f, xs, ys, zs)
+{
+	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A3(f, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map4 = F5(function(f, ws, xs, ys, zs)
+{
+	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
+{
+	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
+	{
+		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
+	}
+	return _List_fromArray(arr);
+});
+
+var _List_sortBy = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		return _Utils_cmp(f(a), f(b));
+	}));
+});
+
+var _List_sortWith = F2(function(f, xs)
+{
+	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
+		var ord = A2(f, a, b);
+		return ord === $elm$core$Basics$EQ ? 0 : ord === $elm$core$Basics$LT ? -1 : 1;
+	}));
+});
+
+
+
 var _JsArray_empty = [];
 
 function _JsArray_singleton(value)
@@ -525,271 +790,6 @@ function _Debug_regionToString(region)
 	}
 	return 'on lines ' + region.start.line + ' through ' + region.end.line;
 }
-
-
-
-// EQUALITY
-
-function _Utils_eq(x, y)
-{
-	for (
-		var pair, stack = [], isEqual = _Utils_eqHelp(x, y, 0, stack);
-		isEqual && (pair = stack.pop());
-		isEqual = _Utils_eqHelp(pair.a, pair.b, 0, stack)
-		)
-	{}
-
-	return isEqual;
-}
-
-function _Utils_eqHelp(x, y, depth, stack)
-{
-	if (x === y)
-	{
-		return true;
-	}
-
-	if (typeof x !== 'object' || x === null || y === null)
-	{
-		typeof x === 'function' && _Debug_crash(5);
-		return false;
-	}
-
-	if (depth > 100)
-	{
-		stack.push(_Utils_Tuple2(x,y));
-		return true;
-	}
-
-	/**/
-	if (x.$ === 'Set_elm_builtin')
-	{
-		x = $elm$core$Set$toList(x);
-		y = $elm$core$Set$toList(y);
-	}
-	if (x.$ === 'RBNode_elm_builtin' || x.$ === 'RBEmpty_elm_builtin')
-	{
-		x = $elm$core$Dict$toList(x);
-		y = $elm$core$Dict$toList(y);
-	}
-	//*/
-
-	/**_UNUSED/
-	if (x.$ < 0)
-	{
-		x = $elm$core$Dict$toList(x);
-		y = $elm$core$Dict$toList(y);
-	}
-	//*/
-
-	for (var key in x)
-	{
-		if (!_Utils_eqHelp(x[key], y[key], depth + 1, stack))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
-var _Utils_equal = F2(_Utils_eq);
-var _Utils_notEqual = F2(function(a, b) { return !_Utils_eq(a,b); });
-
-
-
-// COMPARISONS
-
-// Code in Generate/JavaScript.hs, Basics.js, and List.js depends on
-// the particular integer values assigned to LT, EQ, and GT.
-
-function _Utils_cmp(x, y, ord)
-{
-	if (typeof x !== 'object')
-	{
-		return x === y ? /*EQ*/ 0 : x < y ? /*LT*/ -1 : /*GT*/ 1;
-	}
-
-	/**/
-	if (x instanceof String)
-	{
-		var a = x.valueOf();
-		var b = y.valueOf();
-		return a === b ? 0 : a < b ? -1 : 1;
-	}
-	//*/
-
-	/**_UNUSED/
-	if (typeof x.$ === 'undefined')
-	//*/
-	/**/
-	if (x.$[0] === '#')
-	//*/
-	{
-		return (ord = _Utils_cmp(x.a, y.a))
-			? ord
-			: (ord = _Utils_cmp(x.b, y.b))
-				? ord
-				: _Utils_cmp(x.c, y.c);
-	}
-
-	// traverse conses until end of a list or a mismatch
-	for (; x.b && y.b && !(ord = _Utils_cmp(x.a, y.a)); x = x.b, y = y.b) {} // WHILE_CONSES
-	return ord || (x.b ? /*GT*/ 1 : y.b ? /*LT*/ -1 : /*EQ*/ 0);
-}
-
-var _Utils_lt = F2(function(a, b) { return _Utils_cmp(a, b) < 0; });
-var _Utils_le = F2(function(a, b) { return _Utils_cmp(a, b) < 1; });
-var _Utils_gt = F2(function(a, b) { return _Utils_cmp(a, b) > 0; });
-var _Utils_ge = F2(function(a, b) { return _Utils_cmp(a, b) >= 0; });
-
-var _Utils_compare = F2(function(x, y)
-{
-	var n = _Utils_cmp(x, y);
-	return n < 0 ? $elm$core$Basics$LT : n ? $elm$core$Basics$GT : $elm$core$Basics$EQ;
-});
-
-
-// COMMON VALUES
-
-var _Utils_Tuple0_UNUSED = 0;
-var _Utils_Tuple0 = { $: '#0' };
-
-function _Utils_Tuple2_UNUSED(a, b) { return { a: a, b: b }; }
-function _Utils_Tuple2(a, b) { return { $: '#2', a: a, b: b }; }
-
-function _Utils_Tuple3_UNUSED(a, b, c) { return { a: a, b: b, c: c }; }
-function _Utils_Tuple3(a, b, c) { return { $: '#3', a: a, b: b, c: c }; }
-
-function _Utils_chr_UNUSED(c) { return c; }
-function _Utils_chr(c) { return new String(c); }
-
-
-// RECORDS
-
-function _Utils_update(oldRecord, updatedFields)
-{
-	var newRecord = {};
-
-	for (var key in oldRecord)
-	{
-		newRecord[key] = oldRecord[key];
-	}
-
-	for (var key in updatedFields)
-	{
-		newRecord[key] = updatedFields[key];
-	}
-
-	return newRecord;
-}
-
-
-// APPEND
-
-var _Utils_append = F2(_Utils_ap);
-
-function _Utils_ap(xs, ys)
-{
-	// append Strings
-	if (typeof xs === 'string')
-	{
-		return xs + ys;
-	}
-
-	// append Lists
-	if (!xs.b)
-	{
-		return ys;
-	}
-	var root = _List_Cons(xs.a, ys);
-	xs = xs.b
-	for (var curr = root; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		curr = curr.b = _List_Cons(xs.a, ys);
-	}
-	return root;
-}
-
-
-
-var _List_Nil_UNUSED = { $: 0 };
-var _List_Nil = { $: '[]' };
-
-function _List_Cons_UNUSED(hd, tl) { return { $: 1, a: hd, b: tl }; }
-function _List_Cons(hd, tl) { return { $: '::', a: hd, b: tl }; }
-
-
-var _List_cons = F2(_List_Cons);
-
-function _List_fromArray(arr)
-{
-	var out = _List_Nil;
-	for (var i = arr.length; i--; )
-	{
-		out = _List_Cons(arr[i], out);
-	}
-	return out;
-}
-
-function _List_toArray(xs)
-{
-	for (var out = []; xs.b; xs = xs.b) // WHILE_CONS
-	{
-		out.push(xs.a);
-	}
-	return out;
-}
-
-var _List_map2 = F3(function(f, xs, ys)
-{
-	for (var arr = []; xs.b && ys.b; xs = xs.b, ys = ys.b) // WHILE_CONSES
-	{
-		arr.push(A2(f, xs.a, ys.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map3 = F4(function(f, xs, ys, zs)
-{
-	for (var arr = []; xs.b && ys.b && zs.b; xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A3(f, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map4 = F5(function(f, ws, xs, ys, zs)
-{
-	for (var arr = []; ws.b && xs.b && ys.b && zs.b; ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A4(f, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_map5 = F6(function(f, vs, ws, xs, ys, zs)
-{
-	for (var arr = []; vs.b && ws.b && xs.b && ys.b && zs.b; vs = vs.b, ws = ws.b, xs = xs.b, ys = ys.b, zs = zs.b) // WHILE_CONSES
-	{
-		arr.push(A5(f, vs.a, ws.a, xs.a, ys.a, zs.a));
-	}
-	return _List_fromArray(arr);
-});
-
-var _List_sortBy = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		return _Utils_cmp(f(a), f(b));
-	}));
-});
-
-var _List_sortWith = F2(function(f, xs)
-{
-	return _List_fromArray(_List_toArray(xs).sort(function(a, b) {
-		var ord = A2(f, a, b);
-		return ord === $elm$core$Basics$EQ ? 0 : ord === $elm$core$Basics$LT ? -1 : 1;
-	}));
-});
 
 
 
@@ -4378,32 +4378,93 @@ function _Browser_load(url)
 		}
 	}));
 }
-var $elm$core$Maybe$Nothing = {$: 'Nothing'};
-var $elm$core$List$cons = _List_cons;
-var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
-var $elm$core$Array$foldr = F3(
-	function (func, baseCase, _v0) {
-		var tree = _v0.c;
-		var tail = _v0.d;
-		var helper = F2(
-			function (node, acc) {
-				if (node.$ === 'SubTree') {
-					var subTree = node.a;
-					return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
-				} else {
-					var values = node.a;
-					return A3($elm$core$Elm$JsArray$foldr, func, acc, values);
-				}
-			});
-		return A3(
-			$elm$core$Elm$JsArray$foldr,
-			helper,
-			A3($elm$core$Elm$JsArray$foldr, func, baseCase, tail),
-			tree);
+
+
+
+function _Time_now(millisToPosix)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(millisToPosix(Date.now())));
 	});
-var $elm$core$Array$toList = function (array) {
-	return A3($elm$core$Array$foldr, $elm$core$List$cons, _List_Nil, array);
+}
+
+var _Time_setInterval = F2(function(interval, task)
+{
+	return _Scheduler_binding(function(callback)
+	{
+		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
+		return function() { clearInterval(id); };
+	});
+});
+
+function _Time_here()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		callback(_Scheduler_succeed(
+			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
+		));
+	});
+}
+
+
+function _Time_getZoneName()
+{
+	return _Scheduler_binding(function(callback)
+	{
+		try
+		{
+			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
+		}
+		catch (e)
+		{
+			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
+		}
+		callback(_Scheduler_succeed(name));
+	});
+}
+
+
+
+var _Bitwise_and = F2(function(a, b)
+{
+	return a & b;
+});
+
+var _Bitwise_or = F2(function(a, b)
+{
+	return a | b;
+});
+
+var _Bitwise_xor = F2(function(a, b)
+{
+	return a ^ b;
+});
+
+function _Bitwise_complement(a)
+{
+	return ~a;
 };
+
+var _Bitwise_shiftLeftBy = F2(function(offset, a)
+{
+	return a << offset;
+});
+
+var _Bitwise_shiftRightBy = F2(function(offset, a)
+{
+	return a >> offset;
+});
+
+var _Bitwise_shiftRightZfBy = F2(function(offset, a)
+{
+	return a >>> offset;
+});
+var $elm$core$Basics$EQ = {$: 'EQ'};
+var $elm$core$Basics$GT = {$: 'GT'};
+var $elm$core$Basics$LT = {$: 'LT'};
+var $elm$core$List$cons = _List_cons;
 var $elm$core$Dict$foldr = F3(
 	function (func, acc, t) {
 		foldr:
@@ -4456,37 +4517,30 @@ var $elm$core$Set$toList = function (_v0) {
 	var dict = _v0.a;
 	return $elm$core$Dict$keys(dict);
 };
-var $elm$core$Basics$EQ = {$: 'EQ'};
-var $elm$core$Basics$GT = {$: 'GT'};
-var $elm$core$Basics$LT = {$: 'LT'};
-var $elm$core$Basics$le = _Utils_le;
-var $elm$core$Basics$sub = _Basics_sub;
-var $elm$core$List$repeatHelp = F3(
-	function (result, n, value) {
-		repeatHelp:
-		while (true) {
-			if (n <= 0) {
-				return result;
-			} else {
-				var $temp$result = A2($elm$core$List$cons, value, result),
-					$temp$n = n - 1,
-					$temp$value = value;
-				result = $temp$result;
-				n = $temp$n;
-				value = $temp$value;
-				continue repeatHelp;
-			}
-		}
+var $elm$core$Elm$JsArray$foldr = _JsArray_foldr;
+var $elm$core$Array$foldr = F3(
+	function (func, baseCase, _v0) {
+		var tree = _v0.c;
+		var tail = _v0.d;
+		var helper = F2(
+			function (node, acc) {
+				if (node.$ === 'SubTree') {
+					var subTree = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, helper, acc, subTree);
+				} else {
+					var values = node.a;
+					return A3($elm$core$Elm$JsArray$foldr, func, acc, values);
+				}
+			});
+		return A3(
+			$elm$core$Elm$JsArray$foldr,
+			helper,
+			A3($elm$core$Elm$JsArray$foldr, func, baseCase, tail),
+			tree);
 	});
-var $elm$core$List$repeat = F2(
-	function (n, value) {
-		return A3($elm$core$List$repeatHelp, _List_Nil, n, value);
-	});
-var $author$project$Types$emptyBoard = A2($elm$core$List$repeat, 24, $elm$core$Maybe$Nothing);
-var $author$project$Types$Placement = {$: 'Placement'};
-var $author$project$Types$White = {$: 'White'};
-var $author$project$Types$initialGameState = {blackPiecesLeft: 9, blackPiecesPlaced: 0, currentPlayer: $author$project$Types$White, nextPhaseAfterRemove: $elm$core$Maybe$Nothing, phase: $author$project$Types$Placement, selectedPiece: $elm$core$Maybe$Nothing, whitePiecesLeft: 9, whitePiecesPlaced: 0};
-var $author$project$Main$init = {board: $author$project$Types$emptyBoard, gameState: $author$project$Types$initialGameState};
+var $elm$core$Array$toList = function (array) {
+	return A3($elm$core$Array$foldr, $elm$core$List$cons, _List_Nil, array);
+};
 var $elm$core$Result$Err = function (a) {
 	return {$: 'Err', a: a};
 };
@@ -4513,6 +4567,7 @@ var $elm$core$Basics$add = _Basics_add;
 var $elm$core$Maybe$Just = function (a) {
 	return {$: 'Just', a: a};
 };
+var $elm$core$Maybe$Nothing = {$: 'Nothing'};
 var $elm$core$String$all = _String_all;
 var $elm$core$Basics$and = _Basics_and;
 var $elm$core$Basics$append = _Utils_append;
@@ -4566,6 +4621,8 @@ var $elm$core$List$length = function (xs) {
 		xs);
 };
 var $elm$core$List$map2 = _List_map2;
+var $elm$core$Basics$le = _Utils_le;
+var $elm$core$Basics$sub = _Basics_sub;
 var $elm$core$List$rangeHelp = F3(
 	function (lo, hi, list) {
 		rangeHelp:
@@ -5192,41 +5249,551 @@ var $elm$core$Task$perform = F2(
 			$elm$core$Task$Perform(
 				A2($elm$core$Task$map, toMessage, task)));
 	});
+var $elm$browser$Browser$element = _Browser_element;
+var $elm$core$List$repeatHelp = F3(
+	function (result, n, value) {
+		repeatHelp:
+		while (true) {
+			if (n <= 0) {
+				return result;
+			} else {
+				var $temp$result = A2($elm$core$List$cons, value, result),
+					$temp$n = n - 1,
+					$temp$value = value;
+				result = $temp$result;
+				n = $temp$n;
+				value = $temp$value;
+				continue repeatHelp;
+			}
+		}
+	});
+var $elm$core$List$repeat = F2(
+	function (n, value) {
+		return A3($elm$core$List$repeatHelp, _List_Nil, n, value);
+	});
+var $author$project$Types$emptyBoard = A2($elm$core$List$repeat, 24, $elm$core$Maybe$Nothing);
+var $author$project$Types$Placement = {$: 'Placement'};
+var $author$project$Types$White = {$: 'White'};
+var $author$project$Types$initialGameState = {blackPiecesLeft: 9, blackPiecesPlaced: 0, currentPlayer: $author$project$Types$White, millPositions: _List_Nil, nextPhaseAfterRemove: $elm$core$Maybe$Nothing, phase: $author$project$Types$Placement, selectedPiece: $elm$core$Maybe$Nothing, validMovePositions: _List_Nil, whitePiecesLeft: 9, whitePiecesPlaced: 0};
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$init = function (_v0) {
+	return _Utils_Tuple2(
+		{board: $author$project$Types$emptyBoard, elapsedTime: 0, gameState: $author$project$Types$initialGameState, timerRunning: false},
+		$elm$core$Platform$Cmd$none);
+};
+var $author$project$Main$Tick = function (a) {
+	return {$: 'Tick', a: a};
+};
+var $elm$time$Time$Every = F2(
+	function (a, b) {
+		return {$: 'Every', a: a, b: b};
+	});
+var $elm$time$Time$State = F2(
+	function (taggers, processes) {
+		return {processes: processes, taggers: taggers};
+	});
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
+var $elm$time$Time$init = $elm$core$Task$succeed(
+	A2($elm$time$Time$State, $elm$core$Dict$empty, $elm$core$Dict$empty));
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
+		}
+	});
+var $elm$core$Dict$Black = {$: 'Black'};
+var $elm$core$Dict$RBNode_elm_builtin = F5(
+	function (a, b, c, d, e) {
+		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
+	});
+var $elm$core$Dict$Red = {$: 'Red'};
+var $elm$core$Dict$balance = F5(
+	function (color, key, value, left, right) {
+		if ((right.$ === 'RBNode_elm_builtin') && (right.a.$ === 'Red')) {
+			var _v1 = right.a;
+			var rK = right.b;
+			var rV = right.c;
+			var rLeft = right.d;
+			var rRight = right.e;
+			if ((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) {
+				var _v3 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var lLeft = left.d;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					key,
+					value,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, lK, lV, lLeft, lRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, rK, rV, rLeft, rRight));
+			} else {
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					color,
+					rK,
+					rV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, left, rLeft),
+					rRight);
+			}
+		} else {
+			if ((((left.$ === 'RBNode_elm_builtin') && (left.a.$ === 'Red')) && (left.d.$ === 'RBNode_elm_builtin')) && (left.d.a.$ === 'Red')) {
+				var _v5 = left.a;
+				var lK = left.b;
+				var lV = left.c;
+				var _v6 = left.d;
+				var _v7 = _v6.a;
+				var llK = _v6.b;
+				var llV = _v6.c;
+				var llLeft = _v6.d;
+				var llRight = _v6.e;
+				var lRight = left.e;
+				return A5(
+					$elm$core$Dict$RBNode_elm_builtin,
+					$elm$core$Dict$Red,
+					lK,
+					lV,
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, llK, llV, llLeft, llRight),
+					A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, key, value, lRight, right));
+			} else {
+				return A5($elm$core$Dict$RBNode_elm_builtin, color, key, value, left, right);
+			}
+		}
+	});
+var $elm$core$Dict$insertHelp = F3(
+	function (key, value, dict) {
+		if (dict.$ === 'RBEmpty_elm_builtin') {
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Red, key, value, $elm$core$Dict$RBEmpty_elm_builtin, $elm$core$Dict$RBEmpty_elm_builtin);
+		} else {
+			var nColor = dict.a;
+			var nKey = dict.b;
+			var nValue = dict.c;
+			var nLeft = dict.d;
+			var nRight = dict.e;
+			var _v1 = A2($elm$core$Basics$compare, key, nKey);
+			switch (_v1.$) {
+				case 'LT':
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						A3($elm$core$Dict$insertHelp, key, value, nLeft),
+						nRight);
+				case 'EQ':
+					return A5($elm$core$Dict$RBNode_elm_builtin, nColor, nKey, value, nLeft, nRight);
+				default:
+					return A5(
+						$elm$core$Dict$balance,
+						nColor,
+						nKey,
+						nValue,
+						nLeft,
+						A3($elm$core$Dict$insertHelp, key, value, nRight));
+			}
+		}
+	});
+var $elm$core$Dict$insert = F3(
+	function (key, value, dict) {
+		var _v0 = A3($elm$core$Dict$insertHelp, key, value, dict);
+		if ((_v0.$ === 'RBNode_elm_builtin') && (_v0.a.$ === 'Red')) {
+			var _v1 = _v0.a;
+			var k = _v0.b;
+			var v = _v0.c;
+			var l = _v0.d;
+			var r = _v0.e;
+			return A5($elm$core$Dict$RBNode_elm_builtin, $elm$core$Dict$Black, k, v, l, r);
+		} else {
+			var x = _v0;
+			return x;
+		}
+	});
+var $elm$time$Time$addMySub = F2(
+	function (_v0, state) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		var _v1 = A2($elm$core$Dict$get, interval, state);
+		if (_v1.$ === 'Nothing') {
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				_List_fromArray(
+					[tagger]),
+				state);
+		} else {
+			var taggers = _v1.a;
+			return A3(
+				$elm$core$Dict$insert,
+				interval,
+				A2($elm$core$List$cons, tagger, taggers),
+				state);
+		}
+	});
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$core$Dict$foldl = F3(
+	function (func, acc, dict) {
+		foldl:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return acc;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var $temp$func = func,
+					$temp$acc = A3(
+					func,
+					key,
+					value,
+					A3($elm$core$Dict$foldl, func, acc, left)),
+					$temp$dict = right;
+				func = $temp$func;
+				acc = $temp$acc;
+				dict = $temp$dict;
+				continue foldl;
+			}
+		}
+	});
+var $elm$core$Dict$merge = F6(
+	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
+		var stepState = F3(
+			function (rKey, rValue, _v0) {
+				stepState:
+				while (true) {
+					var list = _v0.a;
+					var result = _v0.b;
+					if (!list.b) {
+						return _Utils_Tuple2(
+							list,
+							A3(rightStep, rKey, rValue, result));
+					} else {
+						var _v2 = list.a;
+						var lKey = _v2.a;
+						var lValue = _v2.b;
+						var rest = list.b;
+						if (_Utils_cmp(lKey, rKey) < 0) {
+							var $temp$rKey = rKey,
+								$temp$rValue = rValue,
+								$temp$_v0 = _Utils_Tuple2(
+								rest,
+								A3(leftStep, lKey, lValue, result));
+							rKey = $temp$rKey;
+							rValue = $temp$rValue;
+							_v0 = $temp$_v0;
+							continue stepState;
+						} else {
+							if (_Utils_cmp(lKey, rKey) > 0) {
+								return _Utils_Tuple2(
+									list,
+									A3(rightStep, rKey, rValue, result));
+							} else {
+								return _Utils_Tuple2(
+									rest,
+									A4(bothStep, lKey, lValue, rValue, result));
+							}
+						}
+					}
+				}
+			});
+		var _v3 = A3(
+			$elm$core$Dict$foldl,
+			stepState,
+			_Utils_Tuple2(
+				$elm$core$Dict$toList(leftDict),
+				initialResult),
+			rightDict);
+		var leftovers = _v3.a;
+		var intermediateResult = _v3.b;
+		return A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v4, result) {
+					var k = _v4.a;
+					var v = _v4.b;
+					return A3(leftStep, k, v, result);
+				}),
+			intermediateResult,
+			leftovers);
+	});
+var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var $elm$time$Time$Name = function (a) {
+	return {$: 'Name', a: a};
+};
+var $elm$time$Time$Offset = function (a) {
+	return {$: 'Offset', a: a};
+};
+var $elm$time$Time$Zone = F2(
+	function (a, b) {
+		return {$: 'Zone', a: a, b: b};
+	});
+var $elm$time$Time$customZone = $elm$time$Time$Zone;
+var $elm$time$Time$setInterval = _Time_setInterval;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$time$Time$spawnHelp = F3(
+	function (router, intervals, processes) {
+		if (!intervals.b) {
+			return $elm$core$Task$succeed(processes);
+		} else {
+			var interval = intervals.a;
+			var rest = intervals.b;
+			var spawnTimer = $elm$core$Process$spawn(
+				A2(
+					$elm$time$Time$setInterval,
+					interval,
+					A2($elm$core$Platform$sendToSelf, router, interval)));
+			var spawnRest = function (id) {
+				return A3(
+					$elm$time$Time$spawnHelp,
+					router,
+					rest,
+					A3($elm$core$Dict$insert, interval, id, processes));
+			};
+			return A2($elm$core$Task$andThen, spawnRest, spawnTimer);
+		}
+	});
+var $elm$time$Time$onEffects = F3(
+	function (router, subs, _v0) {
+		var processes = _v0.processes;
+		var rightStep = F3(
+			function (_v6, id, _v7) {
+				var spawns = _v7.a;
+				var existing = _v7.b;
+				var kills = _v7.c;
+				return _Utils_Tuple3(
+					spawns,
+					existing,
+					A2(
+						$elm$core$Task$andThen,
+						function (_v5) {
+							return kills;
+						},
+						$elm$core$Process$kill(id)));
+			});
+		var newTaggers = A3($elm$core$List$foldl, $elm$time$Time$addMySub, $elm$core$Dict$empty, subs);
+		var leftStep = F3(
+			function (interval, taggers, _v4) {
+				var spawns = _v4.a;
+				var existing = _v4.b;
+				var kills = _v4.c;
+				return _Utils_Tuple3(
+					A2($elm$core$List$cons, interval, spawns),
+					existing,
+					kills);
+			});
+		var bothStep = F4(
+			function (interval, taggers, id, _v3) {
+				var spawns = _v3.a;
+				var existing = _v3.b;
+				var kills = _v3.c;
+				return _Utils_Tuple3(
+					spawns,
+					A3($elm$core$Dict$insert, interval, id, existing),
+					kills);
+			});
+		var _v1 = A6(
+			$elm$core$Dict$merge,
+			leftStep,
+			bothStep,
+			rightStep,
+			newTaggers,
+			processes,
+			_Utils_Tuple3(
+				_List_Nil,
+				$elm$core$Dict$empty,
+				$elm$core$Task$succeed(_Utils_Tuple0)));
+		var spawnList = _v1.a;
+		var existingDict = _v1.b;
+		var killTask = _v1.c;
+		return A2(
+			$elm$core$Task$andThen,
+			function (newProcesses) {
+				return $elm$core$Task$succeed(
+					A2($elm$time$Time$State, newTaggers, newProcesses));
+			},
+			A2(
+				$elm$core$Task$andThen,
+				function (_v2) {
+					return A3($elm$time$Time$spawnHelp, router, spawnList, existingDict);
+				},
+				killTask));
+	});
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
+var $elm$time$Time$onSelfMsg = F3(
+	function (router, interval, state) {
+		var _v0 = A2($elm$core$Dict$get, interval, state.taggers);
+		if (_v0.$ === 'Nothing') {
+			return $elm$core$Task$succeed(state);
+		} else {
+			var taggers = _v0.a;
+			var tellTaggers = function (time) {
+				return $elm$core$Task$sequence(
+					A2(
+						$elm$core$List$map,
+						function (tagger) {
+							return A2(
+								$elm$core$Platform$sendToApp,
+								router,
+								tagger(time));
+						},
+						taggers));
+			};
+			return A2(
+				$elm$core$Task$andThen,
+				function (_v1) {
+					return $elm$core$Task$succeed(state);
+				},
+				A2($elm$core$Task$andThen, tellTaggers, $elm$time$Time$now));
+		}
+	});
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$time$Time$subMap = F2(
+	function (f, _v0) {
+		var interval = _v0.a;
+		var tagger = _v0.b;
+		return A2(
+			$elm$time$Time$Every,
+			interval,
+			A2($elm$core$Basics$composeL, f, tagger));
+	});
+_Platform_effectManagers['Time'] = _Platform_createManager($elm$time$Time$init, $elm$time$Time$onEffects, $elm$time$Time$onSelfMsg, 0, $elm$time$Time$subMap);
+var $elm$time$Time$subscription = _Platform_leaf('Time');
+var $elm$time$Time$every = F2(
+	function (interval, tagger) {
+		return $elm$time$Time$subscription(
+			A2($elm$time$Time$Every, interval, tagger));
+	});
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $elm$browser$Browser$sandbox = function (impl) {
-	return _Browser_element(
-		{
-			init: function (_v0) {
-				return _Utils_Tuple2(impl.init, $elm$core$Platform$Cmd$none);
-			},
-			subscriptions: function (_v1) {
-				return $elm$core$Platform$Sub$none;
-			},
-			update: F2(
-				function (msg, model) {
-					return _Utils_Tuple2(
-						A2(impl.update, msg, model),
-						$elm$core$Platform$Cmd$none);
-				}),
-			view: impl.view
-		});
+var $author$project$Main$subscriptions = function (model) {
+	return model.timerRunning ? A2($elm$time$Time$every, 1000, $author$project$Main$Tick) : $elm$core$Platform$Sub$none;
 };
 var $author$project$Types$Flying = {$: 'Flying'};
 var $author$project$Types$Movement = {$: 'Movement'};
 var $author$project$Types$Removing = {$: 'Removing'};
-var $author$project$Main$determinePhaseForPlayer = F2(
-	function (color, gameState) {
-		var piecesLeft = function () {
-			if (color.$ === 'White') {
-				return gameState.whitePiecesLeft;
+var $author$project$Types$GameOver = {$: 'GameOver'};
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$Main$boardToPieces = function (board) {
+	return A2(
+		$elm$core$List$filterMap,
+		$elm$core$Basics$identity,
+		A2(
+			$elm$core$List$indexedMap,
+			F2(
+				function (_v0, maybePiece) {
+					return A2(
+						$elm$core$Maybe$map,
+						function (piece) {
+							return piece;
+						},
+						maybePiece);
+				}),
+			board));
+};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $author$project$Main$getPiecesForPlayer = F2(
+	function (color, board) {
+		return A2(
+			$elm$core$List$filter,
+			function (piece) {
+				return _Utils_eq(piece.color, color);
+			},
+			$author$project$Main$boardToPieces(board));
+	});
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
+		while (true) {
+			if (!list.b) {
+				return false;
 			} else {
-				return gameState.blackPiecesLeft;
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
+				} else {
+					var $temp$isOkay = isOkay,
+						$temp$list = xs;
+					isOkay = $temp$isOkay;
+					list = $temp$list;
+					continue any;
+				}
 			}
-		}();
-		return (piecesLeft === 3) ? $author$project$Types$Flying : $author$project$Types$Movement;
+		}
 	});
 var $author$project$Board$adjacencies = _List_fromArray(
 	[
@@ -5267,7 +5834,7 @@ var $author$project$Board$adjacencies = _List_fromArray(
 		_List_fromArray(
 		[9, 16, 18]),
 		_List_fromArray(
-		[17, 10]),
+		[17, 19]),
 		_List_fromArray(
 		[11, 18, 20]),
 		_List_fromArray(
@@ -5334,16 +5901,6 @@ var $elm$core$Maybe$andThen = F2(
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $author$project$Board$getPieceAt = F2(
 	function (position, board) {
 		return A2(
@@ -5357,33 +5914,52 @@ var $author$project$Board$getPieceAt = F2(
 				$elm$core$List$head(
 					A2($elm$core$List$drop, position, board))));
 	});
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
+var $author$project$Board$isPositionEmpty = F2(
+	function (position, board) {
+		return _Utils_eq(
+			A2($author$project$Board$getPieceAt, position, board),
+			$elm$core$Maybe$Nothing);
 	});
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
+var $author$project$Main$hasValidMoves = F2(
+	function (color, board) {
+		var playerPieces = A2($author$project$Main$getPiecesForPlayer, color, board);
+		var piecesCount = $elm$core$List$length(playerPieces);
+		return (piecesCount === 3) ? A2(
+			$elm$core$List$any,
+			function (pos) {
+				return A2($author$project$Board$isPositionEmpty, pos, board);
+			},
+			A2($elm$core$List$range, 0, 23)) : A2(
+			$elm$core$List$any,
+			function (piece) {
+				var adjacentPositions = $author$project$Board$getAdjacencies(piece);
+				return A2(
+					$elm$core$List$any,
+					function (pos) {
+						return A2($author$project$Board$isPositionEmpty, pos, board);
+					},
+					adjacentPositions);
+			},
+			playerPieces);
 	});
 var $elm$core$Basics$not = _Basics_not;
+var $author$project$Main$checkWin = F2(
+	function (currentPlayer, board) {
+		var playerPieces = A2($author$project$Main$getPiecesForPlayer, currentPlayer, board);
+		var playerCount = $elm$core$List$length(playerPieces);
+		return (playerCount <= 2) ? true : ((!A2($author$project$Main$hasValidMoves, currentPlayer, board)) ? true : false);
+	});
+var $author$project$Main$determinePhaseForPlayer = F3(
+	function (color, board, gameState) {
+		var piecesLeft = function () {
+			if (color.$ === 'White') {
+				return gameState.whitePiecesLeft;
+			} else {
+				return gameState.blackPiecesLeft;
+			}
+		}();
+		return A2($author$project$Main$checkWin, color, board) ? $author$project$Types$GameOver : ((piecesLeft === 3) ? $author$project$Types$Flying : $author$project$Types$Movement);
+	});
 var $elm$core$List$all = F2(
 	function (isOkay, list) {
 		return !A2(
@@ -5391,17 +5967,17 @@ var $elm$core$List$all = F2(
 			A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay),
 			list);
 	});
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
 	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
 var $elm$core$List$member = F2(
 	function (x, xs) {
 		return A2(
@@ -5446,6 +6022,74 @@ var $author$project$Board$possibleMills = _List_fromArray(
 		_List_fromArray(
 		[7, 15, 23])
 	]);
+var $author$project$Board$getAllMillPositions = function (board) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (pos, acc) {
+				return A2($elm$core$List$member, pos, acc) ? acc : A2($elm$core$List$cons, pos, acc);
+			}),
+		_List_Nil,
+		$elm$core$List$concat(
+			A2(
+				$elm$core$List$filter,
+				function (mill) {
+					var colors = A2(
+						$elm$core$List$map,
+						function (pos) {
+							return A2($author$project$Board$getPieceAt, pos, board);
+						},
+						mill);
+					var firstColor = A2(
+						$elm$core$Maybe$andThen,
+						$elm$core$Basics$identity,
+						$elm$core$List$head(colors));
+					if (firstColor.$ === 'Just') {
+						var color = firstColor.a;
+						return A2(
+							$elm$core$List$all,
+							function (c) {
+								return _Utils_eq(
+									c,
+									$elm$core$Maybe$Just(color));
+							},
+							colors);
+					} else {
+						return false;
+					}
+				},
+				$author$project$Board$possibleMills)));
+};
+var $author$project$Board$getMillPositions = F2(
+	function (piece, board) {
+		return A2(
+			$elm$core$Maybe$withDefault,
+			_List_Nil,
+			$elm$core$List$head(
+				A2(
+					$elm$core$List$filter,
+					function (mill) {
+						return A2(
+							$elm$core$List$all,
+							function (color) {
+								return _Utils_eq(
+									color,
+									$elm$core$Maybe$Just(piece.color));
+							},
+							A2(
+								$elm$core$List$map,
+								function (pos) {
+									return A2($author$project$Board$getPieceAt, pos, board);
+								},
+								mill));
+					},
+					A2(
+						$elm$core$List$filter,
+						function (mill) {
+							return A2($elm$core$List$member, piece.position, mill);
+						},
+						$author$project$Board$possibleMills))));
+	});
 var $author$project$Board$isMill = F2(
 	function (piece, board) {
 		return A2(
@@ -5471,12 +6115,6 @@ var $author$project$Board$isMill = F2(
 					return A2($elm$core$List$member, piece.position, mill);
 				},
 				$author$project$Board$possibleMills));
-	});
-var $author$project$Board$isPositionEmpty = F2(
-	function (position, board) {
-		return _Utils_eq(
-			A2($author$project$Board$getPieceAt, position, board),
-			$elm$core$Maybe$Nothing);
 	});
 var $author$project$Types$Black = {$: 'Black'};
 var $author$project$Main$nextPlayer = function (color) {
@@ -5524,13 +6162,15 @@ var $author$project$Main$attemptMove = F2(
 						var boardWithRemoved = A2($author$project$Main$removePiece, selectedPos, model.board);
 						var newBoard = A3($author$project$Main$placePiece, pos, selectedColor, boardWithRemoved);
 						var formedMill = A2($author$project$Board$isMill, movedPiece, newBoard);
-						var basePhase = A2($author$project$Main$determinePhaseForPlayer, model.gameState.currentPlayer, model.gameState);
+						var millPos = formedMill ? A2($author$project$Board$getMillPositions, movedPiece, newBoard) : _List_Nil;
+						var basePhase = A3($author$project$Main$determinePhaseForPlayer, model.gameState.currentPlayer, newBoard, model.gameState);
 						var _v2 = formedMill ? _Utils_Tuple2(
 							$author$project$Types$Removing,
 							$elm$core$Maybe$Just(basePhase)) : _Utils_Tuple2(
-							A2(
+							A3(
 								$author$project$Main$determinePhaseForPlayer,
 								$author$project$Main$nextPlayer(model.gameState.currentPlayer),
+								newBoard,
 								model.gameState),
 							$elm$core$Maybe$Nothing);
 						var newPhase = _v2.a;
@@ -5539,9 +6179,11 @@ var $author$project$Main$attemptMove = F2(
 							blackPiecesLeft: model.gameState.blackPiecesLeft,
 							blackPiecesPlaced: model.gameState.blackPiecesPlaced,
 							currentPlayer: formedMill ? model.gameState.currentPlayer : $author$project$Main$nextPlayer(model.gameState.currentPlayer),
+							millPositions: $author$project$Board$getAllMillPositions(newBoard),
 							nextPhaseAfterRemove: nextPhaseAfterRemove,
 							phase: newPhase,
 							selectedPiece: $elm$core$Maybe$Nothing,
+							validMovePositions: _List_Nil,
 							whitePiecesLeft: model.gameState.whitePiecesLeft,
 							whitePiecesPlaced: model.gameState.whitePiecesPlaced
 						};
@@ -5561,6 +6203,44 @@ var $author$project$Main$attemptMove = F2(
 			return model;
 		}
 	});
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$Main$checkAndUpdateTimer = function (model) {
+	var hasPlacedPieces = (model.gameState.whitePiecesPlaced > 0) || (model.gameState.blackPiecesPlaced > 0);
+	var shouldRun = hasPlacedPieces && (!_Utils_eq(model.gameState.phase, $author$project$Types$GameOver));
+	return _Utils_update(
+		model,
+		{timerRunning: shouldRun});
+};
+var $author$project$Main$getValidMovePositions = F3(
+	function (selectedPos, phase, board) {
+		var _v0 = A2($author$project$Board$getPieceAt, selectedPos, board);
+		if (_v0.$ === 'Just') {
+			var emptyPositions = A2(
+				$elm$core$List$filter,
+				function (pos) {
+					return A2($author$project$Board$isPositionEmpty, pos, board);
+				},
+				A2($elm$core$List$range, 0, 23));
+			if (_Utils_eq(phase, $author$project$Types$Flying)) {
+				return emptyPositions;
+			} else {
+				if (_Utils_eq(phase, $author$project$Types$Movement)) {
+					var selectedPiece = {color: $author$project$Types$White, position: selectedPos};
+					var adjacentPositions = $author$project$Board$getAdjacencies(selectedPiece);
+					return A2(
+						$elm$core$List$filter,
+						function (pos) {
+							return A2($elm$core$List$member, pos, adjacentPositions);
+						},
+						emptyPositions);
+				} else {
+					return _List_Nil;
+				}
+			}
+		} else {
+			return _List_Nil;
+		}
+	});
 var $author$project$Main$handleMovementClick = F2(
 	function (pos, model) {
 		if (_Utils_eq(model.gameState.phase, $author$project$Types$Movement) || _Utils_eq(model.gameState.phase, $author$project$Types$Flying)) {
@@ -5568,6 +6248,7 @@ var $author$project$Main$handleMovementClick = F2(
 			if (_v0.$ === 'Just') {
 				var color = _v0.a;
 				if (_Utils_eq(color, model.gameState.currentPlayer)) {
+					var validPositions = A3($author$project$Main$getValidMovePositions, pos, model.gameState.phase, model.board);
 					var gs = model.gameState;
 					return _Utils_update(
 						model,
@@ -5575,7 +6256,9 @@ var $author$project$Main$handleMovementClick = F2(
 							gameState: _Utils_update(
 								gs,
 								{
-									selectedPiece: $elm$core$Maybe$Just(pos)
+									millPositions: $author$project$Board$getAllMillPositions(model.board),
+									selectedPiece: $elm$core$Maybe$Just(pos),
+									validMovePositions: validPositions
 								})
 						});
 				} else {
@@ -5587,7 +6270,11 @@ var $author$project$Main$handleMovementClick = F2(
 							{
 								gameState: _Utils_update(
 									gs,
-									{selectedPiece: $elm$core$Maybe$Nothing})
+									{
+										millPositions: $author$project$Board$getAllMillPositions(model.board),
+										selectedPiece: $elm$core$Maybe$Nothing,
+										validMovePositions: _List_Nil
+									})
 							});
 					} else {
 						return model;
@@ -5625,6 +6312,7 @@ var $author$project$Main$handlePlacement = F2(
 			var placedPiece = {color: currentPlayer, position: pos};
 			var newBoard = A3($author$project$Main$placePiece, pos, currentPlayer, model.board);
 			var formedMill = A2($author$project$Board$isMill, placedPiece, newBoard);
+			var millPos = formedMill ? A2($author$project$Board$getMillPositions, placedPiece, newBoard) : _List_Nil;
 			var _v0 = function () {
 				if (currentPlayer.$ === 'White') {
 					return _Utils_Tuple2(model.gameState.whitePiecesPlaced + 1, model.gameState.blackPiecesPlaced);
@@ -5634,7 +6322,26 @@ var $author$project$Main$handlePlacement = F2(
 			}();
 			var newWhiteCount = _v0.a;
 			var newBlackCount = _v0.b;
-			var basePhase = ((newWhiteCount === 9) && (newBlackCount === 9)) ? $author$project$Types$Movement : $author$project$Types$Placement;
+			var basePhase = function () {
+				if ((newWhiteCount === 9) && (newBlackCount === 9)) {
+					var nextPlayerColor = $author$project$Main$nextPlayer(currentPlayer);
+					var tempGameState = {
+						blackPiecesLeft: model.gameState.blackPiecesLeft,
+						blackPiecesPlaced: newBlackCount,
+						currentPlayer: nextPlayerColor,
+						millPositions: $author$project$Board$getAllMillPositions(newBoard),
+						nextPhaseAfterRemove: $elm$core$Maybe$Nothing,
+						phase: $author$project$Types$Movement,
+						selectedPiece: $elm$core$Maybe$Nothing,
+						validMovePositions: _List_Nil,
+						whitePiecesLeft: model.gameState.whitePiecesLeft,
+						whitePiecesPlaced: newWhiteCount
+					};
+					return A3($author$project$Main$determinePhaseForPlayer, nextPlayerColor, newBoard, tempGameState);
+				} else {
+					return $author$project$Types$Placement;
+				}
+			}();
 			var _v2 = formedMill ? _Utils_Tuple2(
 				$author$project$Types$Removing,
 				$elm$core$Maybe$Just(basePhase)) : _Utils_Tuple2(basePhase, $elm$core$Maybe$Nothing);
@@ -5644,9 +6351,11 @@ var $author$project$Main$handlePlacement = F2(
 				blackPiecesLeft: model.gameState.blackPiecesLeft,
 				blackPiecesPlaced: newBlackCount,
 				currentPlayer: formedMill ? currentPlayer : $author$project$Main$nextPlayer(currentPlayer),
+				millPositions: $author$project$Board$getAllMillPositions(newBoard),
 				nextPhaseAfterRemove: nextPhaseAfterRemove,
 				phase: newPhase,
 				selectedPiece: $elm$core$Maybe$Nothing,
+				validMovePositions: _List_Nil,
 				whitePiecesLeft: model.gameState.whitePiecesLeft,
 				whitePiecesPlaced: newWhiteCount
 			};
@@ -5656,50 +6365,6 @@ var $author$project$Main$handlePlacement = F2(
 		} else {
 			return model;
 		}
-	});
-var $elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _v0 = f(mx);
-		if (_v0.$ === 'Just') {
-			var x = _v0.a;
-			return A2($elm$core$List$cons, x, xs);
-		} else {
-			return xs;
-		}
-	});
-var $elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			$elm$core$List$foldr,
-			$elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
-var $author$project$Main$boardToPieces = function (board) {
-	return A2(
-		$elm$core$List$filterMap,
-		$elm$core$Basics$identity,
-		A2(
-			$elm$core$List$indexedMap,
-			F2(
-				function (_v0, maybePiece) {
-					return A2(
-						$elm$core$Maybe$map,
-						function (piece) {
-							return piece;
-						},
-						maybePiece);
-				}),
-			board));
-};
-var $author$project$Main$getPiecesForPlayer = F2(
-	function (color, board) {
-		return A2(
-			$elm$core$List$filter,
-			function (piece) {
-				return _Utils_eq(piece.color, color);
-			},
-			$author$project$Main$boardToPieces(board));
 	});
 var $author$project$Main$canRemovePiece = F3(
 	function (pos, color, board) {
@@ -5737,8 +6402,19 @@ var $author$project$Main$handleRemovePiece = F2(
 					}();
 					var newWhiteLeft = _v1.a;
 					var newBlackLeft = _v1.b;
-					var tempGameState = {blackPiecesLeft: newBlackLeft, blackPiecesPlaced: model.gameState.blackPiecesPlaced, currentPlayer: opponentColor, nextPhaseAfterRemove: $elm$core$Maybe$Nothing, phase: model.gameState.phase, selectedPiece: $elm$core$Maybe$Nothing, whitePiecesLeft: newWhiteLeft, whitePiecesPlaced: model.gameState.whitePiecesPlaced};
-					var newPhase = _Utils_eq(basePhase, $author$project$Types$Placement) ? $author$project$Types$Placement : A2($author$project$Main$determinePhaseForPlayer, opponentColor, tempGameState);
+					var tempGameState = {
+						blackPiecesLeft: newBlackLeft,
+						blackPiecesPlaced: model.gameState.blackPiecesPlaced,
+						currentPlayer: opponentColor,
+						millPositions: $author$project$Board$getAllMillPositions(newBoard),
+						nextPhaseAfterRemove: $elm$core$Maybe$Nothing,
+						phase: model.gameState.phase,
+						selectedPiece: $elm$core$Maybe$Nothing,
+						validMovePositions: _List_Nil,
+						whitePiecesLeft: newWhiteLeft,
+						whitePiecesPlaced: model.gameState.whitePiecesPlaced
+					};
+					var newPhase = _Utils_eq(basePhase, $author$project$Types$Placement) ? $author$project$Types$Placement : A3($author$project$Main$determinePhaseForPlayer, opponentColor, newBoard, tempGameState);
 					var newGameState = _Utils_update(
 						tempGameState,
 						{phase: newPhase});
@@ -5755,42 +6431,64 @@ var $author$project$Main$handleRemovePiece = F2(
 			return model;
 		}
 	});
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Sounds$playSound = _Platform_outgoingPort('playSound', $elm$json$Json$Encode$string);
+var $author$project$Sounds$playPlaceSound = $author$project$Sounds$playSound('place.mp3');
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
+			case 'Tick':
+				return model.timerRunning ? _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{elapsedTime: model.elapsedTime + 1}),
+					$elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 			case 'ClickedPiece':
 				var pos = msg.a;
-				return _Utils_eq(model.gameState.phase, $author$project$Types$Removing) ? A2($author$project$Main$handleRemovePiece, pos, model) : A2($author$project$Main$handleMovementClick, pos, model);
+				var updatedModel = _Utils_eq(model.gameState.phase, $author$project$Types$Removing) ? A2($author$project$Main$handleRemovePiece, pos, model) : A2($author$project$Main$handleMovementClick, pos, model);
+				return _Utils_Tuple2(
+					$author$project$Main$checkAndUpdateTimer(updatedModel),
+					$elm$core$Platform$Cmd$none);
 			case 'ClickedPosition':
 				var pos = msg.a;
-				if (_Utils_eq(model.gameState.phase, $author$project$Types$Placement)) {
-					return A2($author$project$Main$handlePlacement, pos, model);
-				} else {
-					if (_Utils_eq(model.gameState.phase, $author$project$Types$Movement)) {
-						return A2($author$project$Main$attemptMove, pos, model);
+				var updatedModel = function () {
+					if (_Utils_eq(model.gameState.phase, $author$project$Types$Placement)) {
+						return A2($author$project$Main$handlePlacement, pos, model);
 					} else {
-						if (_Utils_eq(model.gameState.phase, $author$project$Types$Flying)) {
+						if (_Utils_eq(model.gameState.phase, $author$project$Types$Movement)) {
 							return A2($author$project$Main$attemptMove, pos, model);
 						} else {
-							if (_Utils_eq(model.gameState.phase, $author$project$Types$Removing)) {
-								return model;
+							if (_Utils_eq(model.gameState.phase, $author$project$Types$Flying)) {
+								return A2($author$project$Main$attemptMove, pos, model);
 							} else {
-								var gs = model.gameState;
-								return _Utils_update(
-									model,
-									{
-										gameState: _Utils_update(
-											gs,
-											{selectedPiece: $elm$core$Maybe$Nothing})
-									});
+								if (_Utils_eq(model.gameState.phase, $author$project$Types$Removing)) {
+									return model;
+								} else {
+									var gs = model.gameState;
+									return _Utils_update(
+										model,
+										{
+											gameState: _Utils_update(
+												gs,
+												{
+													millPositions: $author$project$Board$getAllMillPositions(model.board),
+													selectedPiece: $elm$core$Maybe$Nothing,
+													validMovePositions: _List_Nil
+												})
+										});
+								}
 							}
 						}
 					}
-				}
+				}();
+				var soundCmd = (_Utils_eq(model.gameState.phase, $author$project$Types$Placement) && (!_Utils_eq(model.board, updatedModel.board))) ? $author$project$Sounds$playPlaceSound : $elm$core$Platform$Cmd$none;
+				return _Utils_Tuple2(
+					$author$project$Main$checkAndUpdateTimer(updatedModel),
+					soundCmd);
 			case 'NewGame':
-				return $author$project$Main$init;
+				return $author$project$Main$init(_Utils_Tuple0);
 			default:
-				return model;
+				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$ClickedPiece = function (a) {
@@ -5800,8 +6498,6 @@ var $author$project$Main$ClickedPosition = function (a) {
 	return {$: 'ClickedPosition', a: a};
 };
 var $author$project$Main$NewGame = {$: 'NewGame'};
-var $elm$html$Html$button = _VirtualDom_node('button');
-var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -5811,6 +6507,47 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $elm$core$String$cons = _String_cons;
+var $elm$core$String$fromChar = function (_char) {
+	return A2($elm$core$String$cons, _char, '');
+};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightBy = _Bitwise_shiftRightBy;
+var $elm$core$String$repeatHelp = F3(
+	function (n, chunk, result) {
+		return (n <= 0) ? result : A3(
+			$elm$core$String$repeatHelp,
+			n >> 1,
+			_Utils_ap(chunk, chunk),
+			(!(n & 1)) ? result : _Utils_ap(result, chunk));
+	});
+var $elm$core$String$repeat = F2(
+	function (n, chunk) {
+		return A3($elm$core$String$repeatHelp, n, chunk, '');
+	});
+var $elm$core$String$padLeft = F3(
+	function (n, _char, string) {
+		return _Utils_ap(
+			A2(
+				$elm$core$String$repeat,
+				n - $elm$core$String$length(string),
+				$elm$core$String$fromChar(_char)),
+			string);
+	});
+var $author$project$Main$formatTime = function (totalSeconds) {
+	var seconds = A2($elm$core$Basics$modBy, 60, totalSeconds);
+	var minutes = (totalSeconds / 60) | 0;
+	return A3(
+		$elm$core$String$padLeft,
+		2,
+		_Utils_chr('0'),
+		$elm$core$String$fromInt(minutes)) + (':' + A3(
+		$elm$core$String$padLeft,
+		2,
+		_Utils_chr('0'),
+		$elm$core$String$fromInt(seconds)));
+};
 var $author$project$Main$getPhaseMessage = function (phase) {
 	switch (phase.$) {
 		case 'Placement':
@@ -5819,10 +6556,13 @@ var $author$project$Main$getPhaseMessage = function (phase) {
 			return 'Move your piece to an adjacent position';
 		case 'Flying':
 			return 'Fly your piece to any empty position';
-		default:
+		case 'Removing':
 			return 'Mill formed! Remove an opponent\'s piece';
+		default:
+			return 'Game over! Reset the board to play again.';
 	}
 };
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
 	return {$: 'Normal', a: a};
 };
@@ -5840,6 +6580,21 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		'click',
 		$elm$json$Json$Decode$succeed(msg));
 };
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$View$UI$nextGameButton = function (onClickMsg) {
+	return A2(
+		$elm$html$Html$button,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('next-game-button'),
+				$elm$html$Html$Events$onClick(onClickMsg)
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('New Game')
+			]));
+};
 var $author$project$Types$playerToString = function (color) {
 	if (color.$ === 'White') {
 		return 'White';
@@ -5847,8 +6602,6 @@ var $author$project$Types$playerToString = function (color) {
 		return 'Black';
 	}
 };
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$BoardData$boardPositions = _List_fromArray(
 	[
 		_Utils_Tuple2(100, 100),
@@ -5894,10 +6647,11 @@ var $elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
 var $elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
 var $elm$svg$Svg$Attributes$strokeWidth = _VirtualDom_attribute('stroke-width');
 var $elm$svg$Svg$Attributes$style = _VirtualDom_attribute('style');
-var $author$project$View$ViewBoard$positionCircle = F3(
-	function (index, _v0, onClickMsg) {
+var $author$project$View$ViewBoard$positionCircle = F4(
+	function (index, _v0, isHighlighted, onClickMsg) {
 		var x = _v0.a;
 		var y = _v0.b;
+		var styles = isHighlighted ? {fillColor: '#32CD32', radius: '12', strokeColor: '#00FF00', strokeW: '4'} : {fillColor: '#8B7355', radius: '10', strokeColor: '#5D4E37', strokeW: '3'};
 		return A2(
 			$elm$svg$Svg$circle,
 			_List_fromArray(
@@ -5906,10 +6660,10 @@ var $author$project$View$ViewBoard$positionCircle = F3(
 					$elm$core$String$fromInt(x)),
 					$elm$svg$Svg$Attributes$cy(
 					$elm$core$String$fromInt(y)),
-					$elm$svg$Svg$Attributes$r('10'),
-					$elm$svg$Svg$Attributes$fill('#8B7355'),
-					$elm$svg$Svg$Attributes$stroke('#5D4E37'),
-					$elm$svg$Svg$Attributes$strokeWidth('3'),
+					$elm$svg$Svg$Attributes$r(styles.radius),
+					$elm$svg$Svg$Attributes$fill(styles.fillColor),
+					$elm$svg$Svg$Attributes$stroke(styles.strokeColor),
+					$elm$svg$Svg$Attributes$strokeWidth(styles.strokeW),
 					$elm$svg$Svg$Events$onClick(
 					onClickMsg(index)),
 					$elm$svg$Svg$Attributes$style('cursor: pointer; transition: all 0.2s;')
@@ -5917,10 +6671,12 @@ var $author$project$View$ViewBoard$positionCircle = F3(
 			_List_Nil);
 	});
 var $elm$svg$Svg$rect = $elm$svg$Svg$trustedNode('rect');
+var $elm$svg$Svg$Attributes$rx = _VirtualDom_attribute('rx');
+var $elm$svg$Svg$Attributes$ry = _VirtualDom_attribute('ry');
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
 var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
-var $author$project$View$Piece$pieceStroke = F2(
-	function (color, isSelected) {
+var $author$project$View$Piece$pieceStroke = F3(
+	function (color, isSelected, isInMill) {
 		if (isSelected) {
 			return _List_fromArray(
 				[
@@ -5928,14 +6684,22 @@ var $author$project$View$Piece$pieceStroke = F2(
 					$elm$svg$Svg$Attributes$strokeWidth('3')
 				]);
 		} else {
-			if (color.$ === 'White') {
-				return _List_Nil;
-			} else {
+			if (isInMill) {
 				return _List_fromArray(
 					[
-						$elm$svg$Svg$Attributes$stroke('black'),
-						$elm$svg$Svg$Attributes$strokeWidth('2')
+						$elm$svg$Svg$Attributes$stroke('#00FFFF'),
+						$elm$svg$Svg$Attributes$strokeWidth('4')
 					]);
+			} else {
+				if (color.$ === 'White') {
+					return _List_Nil;
+				} else {
+					return _List_fromArray(
+						[
+							$elm$svg$Svg$Attributes$stroke('black'),
+							$elm$svg$Svg$Attributes$strokeWidth('2')
+						]);
+				}
 			}
 		}
 	});
@@ -5950,11 +6714,12 @@ var $author$project$BoardData$positionToCoordinates = function (pos) {
 	return $elm$core$List$head(
 		A2($elm$core$List$drop, pos, $author$project$BoardData$boardPositions));
 };
-var $author$project$View$Piece$viewPiece = F3(
-	function (selectedPiece, onPieceClick, piece) {
+var $author$project$View$Piece$viewPiece = F4(
+	function (selectedPiece, millPositions, onPieceClick, piece) {
 		var isSelected = _Utils_eq(
 			selectedPiece,
 			$elm$core$Maybe$Just(piece.position));
+		var isInMill = A2($elm$core$List$member, piece.position, millPositions);
 		return A2(
 			$elm$core$Maybe$map,
 			function (_v0) {
@@ -5976,7 +6741,7 @@ var $author$project$View$Piece$viewPiece = F3(
 								onPieceClick(piece.position)),
 								$elm$svg$Svg$Attributes$style('cursor: pointer;')
 							]),
-						A2($author$project$View$Piece$pieceStroke, piece.color, isSelected)),
+						A3($author$project$View$Piece$pieceStroke, piece.color, isSelected, isInMill)),
 					_List_Nil);
 			},
 			$author$project$BoardData$positionToCoordinates(piece.position));
@@ -5988,8 +6753,8 @@ var $elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
 var $elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
 var $elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
 var $elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
-var $author$project$View$ViewBoard$viewBoard = F4(
-	function (selectedPiece, pieces, onPositionClick, onPieceClick) {
+var $author$project$View$ViewBoard$viewBoard = F6(
+	function (selectedPiece, validMovePositions, millPositions, pieces, onPositionClick, onPieceClick) {
 		return A2(
 			$elm$svg$Svg$svg,
 			_List_fromArray(
@@ -6008,6 +6773,8 @@ var $author$project$View$ViewBoard$viewBoard = F4(
 								$elm$svg$Svg$Attributes$y('0'),
 								$elm$svg$Svg$Attributes$width('500'),
 								$elm$svg$Svg$Attributes$height('500'),
+								$elm$svg$Svg$Attributes$rx('24'),
+								$elm$svg$Svg$Attributes$ry('24'),
 								$elm$svg$Svg$Attributes$fill('#D2B48C')
 							]),
 						_List_Nil),
@@ -6209,13 +6976,146 @@ var $author$project$View$ViewBoard$viewBoard = F4(
 						$elm$core$List$indexedMap,
 						F2(
 							function (index, pos) {
-								return A3($author$project$View$ViewBoard$positionCircle, index, pos, onPositionClick);
+								var isHighlighted = A2($elm$core$List$member, index, validMovePositions);
+								return A4($author$project$View$ViewBoard$positionCircle, index, pos, isHighlighted, onPositionClick);
 							}),
 						$author$project$BoardData$boardPositions),
 					A2(
 						$elm$core$List$filterMap,
-						A2($author$project$View$Piece$viewPiece, selectedPiece, onPieceClick),
+						A3($author$project$View$Piece$viewPiece, selectedPiece, millPositions, onPieceClick),
 						pieces))));
+	});
+var $author$project$Main$getWinner = function (board) {
+	var whitePieces = $elm$core$List$length(
+		A2($author$project$Main$getPiecesForPlayer, $author$project$Types$White, board));
+	var whiteHasMoves = A2($author$project$Main$hasValidMoves, $author$project$Types$White, board);
+	var blackPieces = $elm$core$List$length(
+		A2($author$project$Main$getPiecesForPlayer, $author$project$Types$Black, board));
+	var blackHasMoves = A2($author$project$Main$hasValidMoves, $author$project$Types$Black, board);
+	return ((whitePieces <= 2) || (!whiteHasMoves)) ? $author$project$Types$playerToString($author$project$Types$Black) : (((blackPieces <= 2) || (!blackHasMoves)) ? $author$project$Types$playerToString($author$project$Types$White) : '');
+};
+var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
+var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
+var $author$project$Main$viewGameOverScreen = function (board) {
+	var winner = $author$project$Main$getWinner(board);
+	var winnerText = (winner !== '') ? (winner + ' Wins!') : 'Game Over';
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('fixed inset-0 flex flex-col items-center justify-center z-50'),
+				A2($elm$html$Html$Attributes$style, 'background-color', '#3e2723')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('text-center')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('text-8xl font-bold text-amber-100 mb-8')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text('GAME OVER')
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('text-5xl font-bold text-amber-200 mb-12')
+							]),
+						_List_fromArray(
+							[
+								$elm$html$Html$text(winnerText)
+							])),
+						$author$project$View$UI$nextGameButton($author$project$Main$NewGame)
+					]))
+			]));
+};
+var $author$project$Main$getPieceCounts = F3(
+	function (color, gameState, board) {
+		var placed = function () {
+			if (color.$ === 'White') {
+				return gameState.whitePiecesPlaced;
+			} else {
+				return gameState.blackPiecesPlaced;
+			}
+		}();
+		var onBoard = $elm$core$List$length(
+			A2($author$project$Main$getPiecesForPlayer, color, board));
+		var inHand = 9 - placed;
+		return _Utils_Tuple2(onBoard, inHand);
+	});
+var $author$project$Main$viewPieceCount = F3(
+	function (color, gameState, board) {
+		var textColor = function () {
+			if (color.$ === 'White') {
+				return 'text-gray-900';
+			} else {
+				return 'text-white';
+			}
+		}();
+		var colorName = $author$project$Types$playerToString(color);
+		var borderColor = _Utils_eq(gameState.currentPlayer, color) ? 'border-yellow-400 border-4' : 'border-gray-500 border-2';
+		var bgColor = function () {
+			if (color.$ === 'White') {
+				return 'bg-gray-100';
+			} else {
+				return 'bg-gray-800';
+			}
+		}();
+		var _v0 = A3($author$project$Main$getPieceCounts, color, gameState, board);
+		var onBoard = _v0.a;
+		var inHand = _v0.b;
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('px-4 py-3 rounded-lg ' + (bgColor + (' ' + (textColor + (' ' + borderColor)))))
+				]),
+			_List_fromArray(
+				[
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('font-bold text-2xl mb-1')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(colorName)
+						])),
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('text-lg')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							'On board: ' + $elm$core$String$fromInt(onBoard))
+						])),
+					_Utils_eq(gameState.phase, $author$project$Types$Placement) ? A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('text-lg')
+						]),
+					_List_fromArray(
+						[
+							$elm$html$Html$text(
+							'In hand: ' + $elm$core$String$fromInt(inHand))
+						])) : $elm$html$Html$text('')
+				]));
 	});
 var $author$project$Main$view = function (model) {
 	return A2(
@@ -6238,10 +7138,21 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
-								$elm$html$Html$Attributes$class('text-center mb-4')
+								$elm$html$Html$Attributes$class('text-center mb-4 h-24 flex flex-col justify-center')
 							]),
 						_List_fromArray(
 							[
+								A2(
+								$elm$html$Html$div,
+								_List_fromArray(
+									[
+										$elm$html$Html$Attributes$class('text-white text-3xl mb-1')
+									]),
+								_List_fromArray(
+									[
+										$elm$html$Html$text(
+										$author$project$Main$formatTime(model.elapsedTime))
+									])),
 								A2(
 								$elm$html$Html$div,
 								_List_fromArray(
@@ -6257,7 +7168,7 @@ var $author$project$Main$view = function (model) {
 								$elm$html$Html$div,
 								_List_fromArray(
 									[
-										$elm$html$Html$Attributes$class('text-gray-300 text-base')
+										$elm$html$Html$Attributes$class('text-gray-300 text-xl min-h-[2rem]')
 									]),
 								_List_fromArray(
 									[
@@ -6269,32 +7180,36 @@ var $author$project$Main$view = function (model) {
 						$elm$html$Html$div,
 						_List_fromArray(
 							[
+								$elm$html$Html$Attributes$class('flex justify-center gap-4 mb-4 w-full max-w-lg')
+							]),
+						_List_fromArray(
+							[
+								A3($author$project$Main$viewPieceCount, $author$project$Types$Black, model.gameState, model.board),
+								A3($author$project$Main$viewPieceCount, $author$project$Types$White, model.gameState, model.board)
+							])),
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
 								$elm$html$Html$Attributes$class('w-full max-w-lg mx-auto')
 							]),
 						_List_fromArray(
 							[
-								A4(
+								A6(
 								$author$project$View$ViewBoard$viewBoard,
 								model.gameState.selectedPiece,
+								model.gameState.validMovePositions,
+								model.gameState.millPositions,
 								$author$project$Main$boardToPieces(model.board),
 								$author$project$Main$ClickedPosition,
 								$author$project$Main$ClickedPiece)
 							])),
-						A2(
-						$elm$html$Html$button,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors'),
-								$elm$html$Html$Events$onClick($author$project$Main$NewGame)
-							]),
-						_List_fromArray(
-							[
-								$elm$html$Html$text('Game Reset')
-							]))
-					]))
+						$author$project$View$UI$nextGameButton($author$project$Main$NewGame)
+					])),
+				_Utils_eq(model.gameState.phase, $author$project$Types$GameOver) ? $author$project$Main$viewGameOverScreen(model.board) : $elm$html$Html$text('')
 			]));
 };
-var $author$project$Main$main = $elm$browser$Browser$sandbox(
-	{init: $author$project$Main$init, update: $author$project$Main$update, view: $author$project$Main$view});
+var $author$project$Main$main = $elm$browser$Browser$element(
+	{init: $author$project$Main$init, subscriptions: $author$project$Main$subscriptions, update: $author$project$Main$update, view: $author$project$Main$view});
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	$elm$json$Json$Decode$succeed(_Utils_Tuple0))(0)}});}(this));

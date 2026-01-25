@@ -28,18 +28,12 @@ viewPiece selectedPiece millPositions onPieceClick piece =
                 []
         )
 
-
-{-| Returns stroke attributes based on player color, selection state, and mill state
-Selected pieces get a gold highlight stroke
-Mill pieces get a bright cyan/lime highlight stroke
-Otherwise white pieces have no stroke and black pieces have a black stroke
--}
 pieceStroke : Color -> Bool -> Bool -> List (Svg.Attribute msg)
 pieceStroke color isSelected isInMill =
     if isSelected then
-        [ stroke "#FFD700", strokeWidth "3" ]  -- gold highlight for selected piece
+        [ stroke "#FFD700", strokeWidth "3" ]
     else if isInMill then
-        [ stroke "#00FFFF", strokeWidth "4" ]  -- bright cyan highlight for mill pieces
+        [ stroke "#00FFFF", strokeWidth "4" ]
     else
         case color of
             White -> []
