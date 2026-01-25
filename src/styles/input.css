@@ -28,9 +28,10 @@ body {
     #3e2723 !important;
   background-blend-mode: overlay, normal !important;
   background-attachment: fixed !important;
-  min-height: 100vh;
+  height: 100vh;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 html {
@@ -58,7 +59,8 @@ html {
     #3e2723;
   background-blend-mode: overlay, normal;
   background-attachment: fixed;
-  overflow-x: hidden;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Minimalistic Next Game Button - Brown Wood Theme */
