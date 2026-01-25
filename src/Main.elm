@@ -34,7 +34,7 @@ import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard,
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
 import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getMillPositions)
-
+import Sounds exposing (playPlaceSound)
 
 -- MODEL
 
@@ -106,8 +106,15 @@ update msg model =
                             gs = model.gameState
                         in
                         { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = [] } }
+
+                -- Play sound if a piece was placed (board changed)
+                soundCmd =
+                    if model.gameState.phase == Placement && model.board /= updatedModel.board then
+                        playPlaceSound
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, Cmd.none )
+            ( checkAndUpdateTimer updatedModel, soundCmd )
 
         NewGame ->
             init ()
@@ -225,7 +232,7 @@ determinePhaseForPlayer color board gameState =
                 White -> gameState.whitePiecesLeft
                 Black -> gameState.blackPiecesLeft
     in
-    if checkWin board then
+    if checkWin color board then
         GameOver
     else if piecesLeft == 3 then
         Flying
@@ -467,35 +474,30 @@ hasValidMoves color board =
             playerPieces
 
 
-checkWin : Board -> Bool
-checkWin board =
+checkWin : Color -> Board -> Bool
+checkWin currentPlayer board =
     let
-        whitePieces = getPiecesForPlayer White board
-        blackPieces = getPiecesForPlayer Black board
-        whiteCount = List.length whitePieces
-        blackCount = List.length blackPieces
+        playerPieces = getPiecesForPlayer currentPlayer board
+        playerCount = List.length playerPieces
     in
-    -- Game over if a player has 2 or fewer pieces
-    if whiteCount <= 2 || blackCount <= 2 then
+    -- Game over if the current player has 2 or fewer pieces
+    if playerCount <= 2 then
         True
-    -- Game over if a player has no valid moves
-    else if not (hasValidMoves White board) || not (hasValidMoves Black board) then
+    -- Game over if the current player has no valid moves
+    else if not (hasValidMoves currentPlayer board) then
         True
     else
         False
 
 
--- Format time as HH:MM:SS
+-- Format time as MM:SS
 formatTime : Int -> String
 formatTime totalSeconds =
     let
         seconds = modBy 60 totalSeconds
         minutes = totalSeconds // 60
-        hours = minutes // 60
     in
-    String.padLeft 2 '0' (String.fromInt hours)
-        ++ ":"
-        ++ String.padLeft 2 '0' (String.fromInt minutes)
+    String.padLeft 2 '0' (String.fromInt minutes)
         ++ ":"
         ++ String.padLeft 2 '0' (String.fromInt seconds)
 
