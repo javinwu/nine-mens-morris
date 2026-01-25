@@ -195,7 +195,23 @@ handlePlacement pos model =
 
             basePhase =
                 if newWhiteCount == 9 && newBlackCount == 9 then
-                    Movement
+                    -- Check if next player has valid moves when transitioning from Placement
+                    let
+                        nextPlayerColor = nextPlayer currentPlayer
+                        tempGameState =
+                            { currentPlayer = nextPlayerColor
+                            , selectedPiece = Nothing
+                            , phase = Movement
+                            , whitePiecesPlaced = newWhiteCount
+                            , blackPiecesPlaced = newBlackCount
+                            , whitePiecesLeft = model.gameState.whitePiecesLeft
+                            , blackPiecesLeft = model.gameState.blackPiecesLeft
+                            , nextPhaseAfterRemove = Nothing
+                            , validMovePositions = []
+                            , millPositions = []
+                            }
+                    in
+                    determinePhaseForPlayer nextPlayerColor newBoard tempGameState
                 else
                     Placement
 
