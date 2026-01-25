@@ -2,7 +2,7 @@
 index.html linguist-generated=true
 main.js linguist-generated=true
 dist/** linguist-generated=true
-public/** linguist-documentation=true
+public/** linguist-generated=true
 
 # Exclude dependencies from language statistics
 node_modules/** linguist-vendored
