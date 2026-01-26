@@ -2,7 +2,7 @@ module Types exposing (..)
 
 {-| Core Type Definitions for Nine Men's Morris -}
 
-import List
+import Array exposing (Array)
 
 
 type Color
@@ -14,7 +14,7 @@ type alias Position = Int
 
 
 type alias Board =
-  List (Maybe Piece)
+  Array (Maybe Piece)
 
 
 type alias Piece =
@@ -47,7 +47,7 @@ type GamePhase
 
 emptyBoard : Board
 emptyBoard =
-  List.repeat 24 Nothing
+  Array.repeat 24 Nothing
 
 
 initialGameState : GameState
@@ -57,8 +57,8 @@ initialGameState =
   , phase = Placement
   , whitePiecesPlaced = 0
   , blackPiecesPlaced = 0
-  , whitePiecesLeft = 9
-  , blackPiecesLeft = 9
+  , whitePiecesLeft = 0
+  , blackPiecesLeft = 0
   , nextPhaseAfterRemove = Nothing
   , validMovePositions = []
   , millPositions = []

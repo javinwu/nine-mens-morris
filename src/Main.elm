@@ -28,6 +28,7 @@ import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Time
 import List exposing (length)
+import Array
 import Maybe.Extra exposing (isNothing)
 import Process
 import Task
@@ -106,7 +107,7 @@ update msg model =
                         let
                             gs = model.gameState
                         in
-                        { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = getAllMillPositions model.board } }
+                        { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [] } }
 
                 -- Play sound if a piece was placed (board changed)
                 soundCmd =
@@ -158,14 +159,14 @@ handleMovementClick pos model =
                         gs = model.gameState
                         validPositions = getValidMovePositions pos model.gameState.phase model.board
                     in
-                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions, millPositions = getAllMillPositions model.board } }
+                    { model | gameState = { gs | selectedPiece = Just pos, validMovePositions = validPositions } }
                 else
                     case model.gameState.selectedPiece of
                         Just _ ->
                             let
                                 gs = model.gameState
                             in
-                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [], millPositions = getAllMillPositions model.board } }
+                            { model | gameState = { gs | selectedPiece = Nothing, validMovePositions = [] } }
                         Nothing ->
                             model
             Nothing ->
@@ -195,6 +196,11 @@ handlePlacement pos model =
                     White -> (model.gameState.whitePiecesPlaced + 1, model.gameState.blackPiecesPlaced)
                     Black -> (model.gameState.whitePiecesPlaced, model.gameState.blackPiecesPlaced + 1)
 
+            (newWhiteLeft, newBlackLeft) =
+                case currentPlayer of
+                    White -> (model.gameState.whitePiecesLeft + 1, model.gameState.blackPiecesLeft)
+                    Black -> (model.gameState.whitePiecesLeft, model.gameState.blackPiecesLeft + 1)
+
             basePhase =
                 if newWhiteCount == 9 && newBlackCount == 9 then
                     let
@@ -205,8 +211,8 @@ handlePlacement pos model =
                             , phase = Movement
                             , whitePiecesPlaced = newWhiteCount
                             , blackPiecesPlaced = newBlackCount
-                            , whitePiecesLeft = model.gameState.whitePiecesLeft
-                            , blackPiecesLeft = model.gameState.blackPiecesLeft
+                            , whitePiecesLeft = newWhiteLeft
+                            , blackPiecesLeft = newBlackLeft
                             , nextPhaseAfterRemove = Nothing
                             , validMovePositions = []
                             , millPositions = getAllMillPositions newBoard
@@ -228,8 +234,8 @@ handlePlacement pos model =
                 , phase = newPhase
                 , whitePiecesPlaced = newWhiteCount
                 , blackPiecesPlaced = newBlackCount
-                , whitePiecesLeft = model.gameState.whitePiecesLeft
-                , blackPiecesLeft = model.gameState.blackPiecesLeft
+                , whitePiecesLeft = newWhiteLeft
+                , blackPiecesLeft = newBlackLeft
                 , nextPhaseAfterRemove = nextPhaseAfterRemove
                 , validMovePositions = []
                 , millPositions = getAllMillPositions newBoard
@@ -385,7 +391,7 @@ getValidMovePositions selectedPos phase board =
 boardToPieces : Board -> List Piece
 boardToPieces board =
     board
-        |> List.indexedMap (\_ maybePiece -> Maybe.map (\piece -> piece) maybePiece)
+        |> Array.toList
         |> List.filterMap identity
 
 
@@ -408,26 +414,12 @@ canPlacePiece color gameState =
 
 placePiece : Int -> Color -> Board -> Board
 placePiece pos color board =
-    List.indexedMap
-        (\index maybePiece ->
-            if index == pos then
-                Just { color = color, position = pos }
-            else
-                maybePiece
-        )
-        board
+    Array.set pos (Just { color = color, position = pos }) board
 
 
 removePiece : Int -> Board -> Board
 removePiece pos board =
-    List.indexedMap
-        (\index maybePiece ->
-            if index == pos then
-                Nothing
-            else
-                maybePiece
-        )
-        board
+    Array.set pos Nothing board
 
 canRemovePiece : Position -> Color -> Board -> Bool
 canRemovePiece pos color board =

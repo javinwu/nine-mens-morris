@@ -4,6 +4,7 @@ import Html exposing (Html)
 import Svg exposing (Svg, svg, line, circle)
 import Svg.Attributes exposing (class, viewBox, x1, y1, x2, y2, cx, cy, r, stroke, strokeWidth, fill)
 import Svg.Events exposing (onClick)
+import Array
 import Types exposing (Piece, Position)
 import View.Piece exposing (viewPiece)
 import BoardData exposing (boardPositions)
@@ -70,11 +71,13 @@ viewBoard selectedPiece validMovePositions millPositions pieces onPositionClick 
          , line [ x1 "250", y1 "470", x2 "250", y2 "324", stroke "#8B4513", strokeWidth "3" ] []
          , line [ x1 "30", y1 "250", x2 "176", y2 "250", stroke "#8B4513", strokeWidth "3" ] []
          ]
-         ++ List.indexedMap (\index pos ->
-             let
-                 isHighlighted = List.member index validMovePositions
-             in
-             positionCircle index pos isHighlighted onPositionClick
-         ) boardPositions
+         ++ (boardPositions
+             |> Array.toIndexedList
+             |> List.map (\(index, pos) ->
+                 let
+                     isHighlighted = List.member index validMovePositions
+                 in
+                 positionCircle index pos isHighlighted onPositionClick
+             ))
          ++ List.filterMap (viewPiece selectedPiece millPositions onPieceClick) pieces
         ) 
