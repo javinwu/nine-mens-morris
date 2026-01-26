@@ -12,6 +12,7 @@ viewPiece selectedPiece millPositions onPieceClick piece =
     let
         isSelected = selectedPiece == Just piece.position
         isInMill = List.member piece.position millPositions
+        classAttr = if isInMill then [Svg.Attributes.class "mill-piece"] else []
     in
     positionToCoordinates piece.position
         |> Maybe.map (\(x, y) ->
@@ -24,6 +25,7 @@ viewPiece selectedPiece millPositions onPieceClick piece =
                 , Svg.Attributes.style "cursor: pointer;"
                 ]
                 ++ pieceStroke piece.color isSelected isInMill
+                ++ classAttr
                 )
                 []
         )

@@ -29,6 +29,8 @@ import Html.Attributes exposing (class)
 import Time
 import List exposing (length)
 import Maybe.Extra exposing (isNothing)
+import Process
+import Task
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
@@ -40,6 +42,7 @@ type alias Model =
     , gameState : GameState
     , elapsedTime : Int
     , timerRunning : Bool
+    , showMillNotification : Bool
     }
 
 
@@ -49,6 +52,7 @@ init _ =
       , gameState = initialGameState
       , elapsedTime = 0
       , timerRunning = False
+      , showMillNotification = False
       }
     , Cmd.none
     )
@@ -59,6 +63,7 @@ type Msg
     | NewGame
     | NoOp
     | Tick Time.Posix
+    | HideMillNotification
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -76,8 +81,15 @@ update msg model =
                         handleRemovePiece pos model
                     else
                         handleMovementClick pos model
+
+                millNotificationCmd =
+                    if updatedModel.showMillNotification && not model.showMillNotification then
+                        Process.sleep 2000
+                            |> Task.perform (\_ -> HideMillNotification)
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, Cmd.none )
+            ( checkAndUpdateTimer updatedModel, millNotificationCmd )
         
         ClickedPosition pos ->
             let
@@ -102,14 +114,24 @@ update msg model =
                         playPlaceSound
                     else
                         Cmd.none
+
+                millNotificationCmd =
+                    if updatedModel.showMillNotification && not model.showMillNotification then
+                        Process.sleep 2000
+                            |> Task.perform (\_ -> HideMillNotification)
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, soundCmd )
+            ( checkAndUpdateTimer updatedModel, Cmd.batch [ soundCmd, millNotificationCmd ] )
 
         NewGame ->
             init ()
 
         NoOp ->
             ( model, Cmd.none )
+
+        HideMillNotification ->
+            ( { model | showMillNotification = False }, Cmd.none )
 
 checkAndUpdateTimer : Model -> Model
 checkAndUpdateTimer model =
@@ -213,7 +235,7 @@ handlePlacement pos model =
                 , millPositions = getAllMillPositions newBoard
                 }
         in
-        { model | board = newBoard, gameState = newGameState }
+        { model | board = newBoard, gameState = newGameState, showMillNotification = formedMill }
     else
         model
 
@@ -278,7 +300,7 @@ attemptMove pos model =
                                     , millPositions = getAllMillPositions newBoard
                                     }
                             in
-                            { model | board = newBoard, gameState = newGameState }
+                            { model | board = newBoard, gameState = newGameState, showMillNotification = formedMill }
                         else
                             model
                     Nothing ->
@@ -535,6 +557,12 @@ getWinner board =
         ""
 
 
+viewMillNotification : Html Msg
+viewMillNotification =
+    div [ class "mill-notification" ]
+        [ text "MILL FORMED!" ]
+
+
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =
     let
@@ -577,6 +605,10 @@ view model =
             ]
         , if model.gameState.phase == GameOver then
             viewGameOverScreen model.board
+          else
+            text ""
+        , if model.showMillNotification then
+            viewMillNotification
           else
             text ""
         ]

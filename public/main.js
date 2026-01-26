@@ -5279,7 +5279,7 @@ var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2(
-		{board: $author$project$Types$emptyBoard, elapsedTime: 0, gameState: $author$project$Types$initialGameState, timerRunning: false},
+		{board: $author$project$Types$emptyBoard, elapsedTime: 0, gameState: $author$project$Types$initialGameState, showMillNotification: false, timerRunning: false},
 		$elm$core$Platform$Cmd$none);
 };
 var $author$project$Main$Tick = function (a) {
@@ -5706,6 +5706,7 @@ var $author$project$Main$subscriptions = function (model) {
 	return model.timerRunning ? A2($elm$time$Time$every, 1000, $author$project$Main$Tick) : $elm$core$Platform$Sub$none;
 };
 var $author$project$Types$Flying = {$: 'Flying'};
+var $author$project$Main$HideMillNotification = {$: 'HideMillNotification'};
 var $author$project$Types$Movement = {$: 'Movement'};
 var $author$project$Types$Removing = {$: 'Removing'};
 var $author$project$Types$GameOver = {$: 'GameOver'};
@@ -6189,7 +6190,7 @@ var $author$project$Main$attemptMove = F2(
 						};
 						return _Utils_update(
 							model,
-							{board: newBoard, gameState: newGameState});
+							{board: newBoard, gameState: newGameState, showMillNotification: formedMill});
 					} else {
 						return model;
 					}
@@ -6361,7 +6362,7 @@ var $author$project$Main$handlePlacement = F2(
 			};
 			return _Utils_update(
 				model,
-				{board: newBoard, gameState: newGameState});
+				{board: newBoard, gameState: newGameState, showMillNotification: formedMill});
 		} else {
 			return model;
 		}
@@ -6434,6 +6435,7 @@ var $author$project$Main$handleRemovePiece = F2(
 var $elm$json$Json$Encode$string = _Json_wrap;
 var $author$project$Sounds$playSound = _Platform_outgoingPort('playSound', $elm$json$Json$Encode$string);
 var $author$project$Sounds$playPlaceSound = $author$project$Sounds$playSound('place.mp3');
+var $elm$core$Process$sleep = _Process_sleep;
 var $author$project$Main$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -6446,9 +6448,15 @@ var $author$project$Main$update = F2(
 			case 'ClickedPiece':
 				var pos = msg.a;
 				var updatedModel = _Utils_eq(model.gameState.phase, $author$project$Types$Removing) ? A2($author$project$Main$handleRemovePiece, pos, model) : A2($author$project$Main$handleMovementClick, pos, model);
+				var millNotificationCmd = (updatedModel.showMillNotification && (!model.showMillNotification)) ? A2(
+					$elm$core$Task$perform,
+					function (_v1) {
+						return $author$project$Main$HideMillNotification;
+					},
+					$elm$core$Process$sleep(2000)) : $elm$core$Platform$Cmd$none;
 				return _Utils_Tuple2(
 					$author$project$Main$checkAndUpdateTimer(updatedModel),
-					$elm$core$Platform$Cmd$none);
+					millNotificationCmd);
 			case 'ClickedPosition':
 				var pos = msg.a;
 				var updatedModel = function () {
@@ -6482,13 +6490,27 @@ var $author$project$Main$update = F2(
 					}
 				}();
 				var soundCmd = (_Utils_eq(model.gameState.phase, $author$project$Types$Placement) && (!_Utils_eq(model.board, updatedModel.board))) ? $author$project$Sounds$playPlaceSound : $elm$core$Platform$Cmd$none;
+				var millNotificationCmd = (updatedModel.showMillNotification && (!model.showMillNotification)) ? A2(
+					$elm$core$Task$perform,
+					function (_v2) {
+						return $author$project$Main$HideMillNotification;
+					},
+					$elm$core$Process$sleep(2000)) : $elm$core$Platform$Cmd$none;
 				return _Utils_Tuple2(
 					$author$project$Main$checkAndUpdateTimer(updatedModel),
-					soundCmd);
+					$elm$core$Platform$Cmd$batch(
+						_List_fromArray(
+							[soundCmd, millNotificationCmd])));
 			case 'NewGame':
 				return $author$project$Main$init(_Utils_Tuple0);
-			default:
+			case 'NoOp':
 				return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{showMillNotification: false}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
 var $author$project$Main$ClickedPiece = function (a) {
@@ -6604,30 +6626,30 @@ var $author$project$Types$playerToString = function (color) {
 };
 var $author$project$BoardData$boardPositions = _List_fromArray(
 	[
-		_Utils_Tuple2(100, 100),
-		_Utils_Tuple2(250, 100),
-		_Utils_Tuple2(400, 100),
-		_Utils_Tuple2(400, 250),
-		_Utils_Tuple2(400, 400),
-		_Utils_Tuple2(250, 400),
-		_Utils_Tuple2(100, 400),
-		_Utils_Tuple2(100, 250),
-		_Utils_Tuple2(150, 150),
-		_Utils_Tuple2(250, 150),
-		_Utils_Tuple2(350, 150),
-		_Utils_Tuple2(350, 250),
-		_Utils_Tuple2(350, 350),
-		_Utils_Tuple2(250, 350),
-		_Utils_Tuple2(150, 350),
-		_Utils_Tuple2(150, 250),
-		_Utils_Tuple2(200, 200),
-		_Utils_Tuple2(250, 200),
-		_Utils_Tuple2(300, 200),
-		_Utils_Tuple2(300, 250),
-		_Utils_Tuple2(300, 300),
-		_Utils_Tuple2(250, 300),
-		_Utils_Tuple2(200, 300),
-		_Utils_Tuple2(200, 250)
+		_Utils_Tuple2(30, 30),
+		_Utils_Tuple2(250, 30),
+		_Utils_Tuple2(470, 30),
+		_Utils_Tuple2(470, 250),
+		_Utils_Tuple2(470, 470),
+		_Utils_Tuple2(250, 470),
+		_Utils_Tuple2(30, 470),
+		_Utils_Tuple2(30, 250),
+		_Utils_Tuple2(103, 103),
+		_Utils_Tuple2(250, 103),
+		_Utils_Tuple2(397, 103),
+		_Utils_Tuple2(397, 250),
+		_Utils_Tuple2(397, 397),
+		_Utils_Tuple2(250, 397),
+		_Utils_Tuple2(103, 397),
+		_Utils_Tuple2(103, 250),
+		_Utils_Tuple2(176, 176),
+		_Utils_Tuple2(250, 176),
+		_Utils_Tuple2(324, 176),
+		_Utils_Tuple2(324, 250),
+		_Utils_Tuple2(324, 324),
+		_Utils_Tuple2(250, 324),
+		_Utils_Tuple2(176, 324),
+		_Utils_Tuple2(176, 250)
 	]);
 var $elm$svg$Svg$Attributes$class = _VirtualDom_attribute('class');
 var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
@@ -6720,6 +6742,10 @@ var $author$project$View$Piece$viewPiece = F4(
 			selectedPiece,
 			$elm$core$Maybe$Just(piece.position));
 		var isInMill = A2($elm$core$List$member, piece.position, millPositions);
+		var classAttr = isInMill ? _List_fromArray(
+			[
+				$elm$svg$Svg$Attributes$class('mill-piece')
+			]) : _List_Nil;
 		return A2(
 			$elm$core$Maybe$map,
 			function (_v0) {
@@ -6741,7 +6767,9 @@ var $author$project$View$Piece$viewPiece = F4(
 								onPieceClick(piece.position)),
 								$elm$svg$Svg$Attributes$style('cursor: pointer;')
 							]),
-						A3($author$project$View$Piece$pieceStroke, piece.color, isSelected, isInMill)),
+						_Utils_ap(
+							A3($author$project$View$Piece$pieceStroke, piece.color, isSelected, isInMill),
+							classAttr)),
 					_List_Nil);
 			},
 			$author$project$BoardData$positionToCoordinates(piece.position));
@@ -6782,10 +6810,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('100'),
-								$elm$svg$Svg$Attributes$y1('100'),
-								$elm$svg$Svg$Attributes$x2('400'),
-								$elm$svg$Svg$Attributes$y2('100'),
+								$elm$svg$Svg$Attributes$x1('30'),
+								$elm$svg$Svg$Attributes$y1('30'),
+								$elm$svg$Svg$Attributes$x2('470'),
+								$elm$svg$Svg$Attributes$y2('30'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6794,10 +6822,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('400'),
-								$elm$svg$Svg$Attributes$y1('100'),
-								$elm$svg$Svg$Attributes$x2('400'),
-								$elm$svg$Svg$Attributes$y2('400'),
+								$elm$svg$Svg$Attributes$x1('470'),
+								$elm$svg$Svg$Attributes$y1('30'),
+								$elm$svg$Svg$Attributes$x2('470'),
+								$elm$svg$Svg$Attributes$y2('470'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6806,10 +6834,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('400'),
-								$elm$svg$Svg$Attributes$y1('400'),
-								$elm$svg$Svg$Attributes$x2('100'),
-								$elm$svg$Svg$Attributes$y2('400'),
+								$elm$svg$Svg$Attributes$x1('470'),
+								$elm$svg$Svg$Attributes$y1('470'),
+								$elm$svg$Svg$Attributes$x2('30'),
+								$elm$svg$Svg$Attributes$y2('470'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6818,10 +6846,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('100'),
-								$elm$svg$Svg$Attributes$y1('400'),
-								$elm$svg$Svg$Attributes$x2('100'),
-								$elm$svg$Svg$Attributes$y2('100'),
+								$elm$svg$Svg$Attributes$x1('30'),
+								$elm$svg$Svg$Attributes$y1('470'),
+								$elm$svg$Svg$Attributes$x2('30'),
+								$elm$svg$Svg$Attributes$y2('30'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6830,10 +6858,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('150'),
-								$elm$svg$Svg$Attributes$y1('150'),
-								$elm$svg$Svg$Attributes$x2('350'),
-								$elm$svg$Svg$Attributes$y2('150'),
+								$elm$svg$Svg$Attributes$x1('103'),
+								$elm$svg$Svg$Attributes$y1('103'),
+								$elm$svg$Svg$Attributes$x2('397'),
+								$elm$svg$Svg$Attributes$y2('103'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6842,10 +6870,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('350'),
-								$elm$svg$Svg$Attributes$y1('150'),
-								$elm$svg$Svg$Attributes$x2('350'),
-								$elm$svg$Svg$Attributes$y2('350'),
+								$elm$svg$Svg$Attributes$x1('397'),
+								$elm$svg$Svg$Attributes$y1('103'),
+								$elm$svg$Svg$Attributes$x2('397'),
+								$elm$svg$Svg$Attributes$y2('397'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6854,10 +6882,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('350'),
-								$elm$svg$Svg$Attributes$y1('350'),
-								$elm$svg$Svg$Attributes$x2('150'),
-								$elm$svg$Svg$Attributes$y2('350'),
+								$elm$svg$Svg$Attributes$x1('397'),
+								$elm$svg$Svg$Attributes$y1('397'),
+								$elm$svg$Svg$Attributes$x2('103'),
+								$elm$svg$Svg$Attributes$y2('397'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6866,10 +6894,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('150'),
-								$elm$svg$Svg$Attributes$y1('350'),
-								$elm$svg$Svg$Attributes$x2('150'),
-								$elm$svg$Svg$Attributes$y2('150'),
+								$elm$svg$Svg$Attributes$x1('103'),
+								$elm$svg$Svg$Attributes$y1('397'),
+								$elm$svg$Svg$Attributes$x2('103'),
+								$elm$svg$Svg$Attributes$y2('103'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6878,10 +6906,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('200'),
-								$elm$svg$Svg$Attributes$y1('200'),
-								$elm$svg$Svg$Attributes$x2('300'),
-								$elm$svg$Svg$Attributes$y2('200'),
+								$elm$svg$Svg$Attributes$x1('176'),
+								$elm$svg$Svg$Attributes$y1('176'),
+								$elm$svg$Svg$Attributes$x2('324'),
+								$elm$svg$Svg$Attributes$y2('176'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6890,10 +6918,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('300'),
-								$elm$svg$Svg$Attributes$y1('200'),
-								$elm$svg$Svg$Attributes$x2('300'),
-								$elm$svg$Svg$Attributes$y2('300'),
+								$elm$svg$Svg$Attributes$x1('324'),
+								$elm$svg$Svg$Attributes$y1('176'),
+								$elm$svg$Svg$Attributes$x2('324'),
+								$elm$svg$Svg$Attributes$y2('324'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6902,10 +6930,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('300'),
-								$elm$svg$Svg$Attributes$y1('300'),
-								$elm$svg$Svg$Attributes$x2('200'),
-								$elm$svg$Svg$Attributes$y2('300'),
+								$elm$svg$Svg$Attributes$x1('324'),
+								$elm$svg$Svg$Attributes$y1('324'),
+								$elm$svg$Svg$Attributes$x2('176'),
+								$elm$svg$Svg$Attributes$y2('324'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6914,10 +6942,10 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('200'),
-								$elm$svg$Svg$Attributes$y1('300'),
-								$elm$svg$Svg$Attributes$x2('200'),
-								$elm$svg$Svg$Attributes$y2('200'),
+								$elm$svg$Svg$Attributes$x1('176'),
+								$elm$svg$Svg$Attributes$y1('324'),
+								$elm$svg$Svg$Attributes$x2('176'),
+								$elm$svg$Svg$Attributes$y2('176'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6927,9 +6955,9 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						_List_fromArray(
 							[
 								$elm$svg$Svg$Attributes$x1('250'),
-								$elm$svg$Svg$Attributes$y1('100'),
+								$elm$svg$Svg$Attributes$y1('30'),
 								$elm$svg$Svg$Attributes$x2('250'),
-								$elm$svg$Svg$Attributes$y2('200'),
+								$elm$svg$Svg$Attributes$y2('176'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6938,9 +6966,9 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('400'),
+								$elm$svg$Svg$Attributes$x1('470'),
 								$elm$svg$Svg$Attributes$y1('250'),
-								$elm$svg$Svg$Attributes$x2('300'),
+								$elm$svg$Svg$Attributes$x2('324'),
 								$elm$svg$Svg$Attributes$y2('250'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
@@ -6951,9 +6979,9 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						_List_fromArray(
 							[
 								$elm$svg$Svg$Attributes$x1('250'),
-								$elm$svg$Svg$Attributes$y1('400'),
+								$elm$svg$Svg$Attributes$y1('470'),
 								$elm$svg$Svg$Attributes$x2('250'),
-								$elm$svg$Svg$Attributes$y2('300'),
+								$elm$svg$Svg$Attributes$y2('324'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
 							]),
@@ -6962,9 +6990,9 @@ var $author$project$View$ViewBoard$viewBoard = F6(
 						$elm$svg$Svg$line,
 						_List_fromArray(
 							[
-								$elm$svg$Svg$Attributes$x1('100'),
+								$elm$svg$Svg$Attributes$x1('30'),
 								$elm$svg$Svg$Attributes$y1('250'),
-								$elm$svg$Svg$Attributes$x2('200'),
+								$elm$svg$Svg$Attributes$x2('176'),
 								$elm$svg$Svg$Attributes$y2('250'),
 								$elm$svg$Svg$Attributes$stroke('#8B4513'),
 								$elm$svg$Svg$Attributes$strokeWidth('3')
@@ -7040,6 +7068,16 @@ var $author$project$Main$viewGameOverScreen = function (board) {
 					]))
 			]));
 };
+var $author$project$Main$viewMillNotification = A2(
+	$elm$html$Html$div,
+	_List_fromArray(
+		[
+			$elm$html$Html$Attributes$class('mill-notification')
+		]),
+	_List_fromArray(
+		[
+			$elm$html$Html$text('MILL FORMED!')
+		]));
 var $author$project$Main$getPieceCounts = F3(
 	function (color, gameState, board) {
 		var placed = function () {
@@ -7206,7 +7244,8 @@ var $author$project$Main$view = function (model) {
 							])),
 						$author$project$View$UI$nextGameButton($author$project$Main$NewGame)
 					])),
-				_Utils_eq(model.gameState.phase, $author$project$Types$GameOver) ? $author$project$Main$viewGameOverScreen(model.board) : $elm$html$Html$text('')
+				_Utils_eq(model.gameState.phase, $author$project$Types$GameOver) ? $author$project$Main$viewGameOverScreen(model.board) : $elm$html$Html$text(''),
+				model.showMillNotification ? $author$project$Main$viewMillNotification : $elm$html$Html$text('')
 			]));
 };
 var $author$project$Main$main = $elm$browser$Browser$element(

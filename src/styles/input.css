@@ -97,3 +97,99 @@ html {
   box-shadow: 0 2px 8px 0 rgba(62, 39, 35, 0.3),
               inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
 }
+
+/* Mill Notification with Epic Effects */
+.mill-notification {
+  position: fixed;
+  top: 6rem;
+  right: 2rem;
+  transform: rotate(25deg);
+  transform-origin: center;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+  color: #3e2723;
+  padding: 1.5rem 3rem;
+  border-radius: 1rem;
+  font-size: 3rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 10px rgba(255, 215, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.6);
+  box-shadow:
+    0 0 20px 5px rgba(255, 215, 0, 0.8),
+    0 0 40px 10px rgba(255, 165, 0, 0.6),
+    0 8px 32px rgba(255, 215, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 2px 8px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 8px rgba(255, 140, 0, 0.4);
+  border: 4px solid #FFD700;
+  animation: millEpic 2s ease-in-out;
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
+}
+
+@keyframes millEpic {
+  0% {
+    opacity: 0;
+    transform: rotate(25deg) scale(0.3) translateY(-100px);
+    filter: blur(10px) drop-shadow(0 0 0px rgba(255, 215, 0, 0));
+  }
+  5% {
+    opacity: 1;
+    transform: rotate(25deg) scale(1.3);
+    filter: blur(0px) drop-shadow(0 0 30px rgba(255, 215, 0, 1));
+  }
+  10% {
+    transform: rotate(20deg) scale(1.15);
+  }
+  15% {
+    transform: rotate(30deg) scale(1.05);
+  }
+  20% {
+    transform: rotate(23deg) scale(1.1);
+  }
+  25% {
+    transform: rotate(27deg) scale(1);
+  }
+  30% {
+    transform: rotate(25deg) scale(1.05);
+  }
+  35% {
+    transform: rotate(25deg) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: rotate(25deg) scale(1);
+    filter: blur(0px) drop-shadow(0 0 25px rgba(255, 215, 0, 0.9));
+  }
+  85% {
+    opacity: 1;
+    transform: rotate(25deg) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(25deg) scale(0.3) translateY(-100px);
+    filter: blur(10px) drop-shadow(0 0 0px rgba(255, 215, 0, 0));
+  }
+}
+
+/* Mill Piece Pulsing Glow Effect */
+.mill-piece {
+  animation: millPulse 1.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 15px rgba(0, 255, 255, 0.6));
+}
+
+@keyframes millPulse {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 15px rgba(0, 255, 255, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(0, 255, 255, 1)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 45px rgba(0, 255, 255, 0.5));
+  }
+  100% {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8)) drop-shadow(0 0 15px rgba(0, 255, 255, 0.6));
+  }
+}
