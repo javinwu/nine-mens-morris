@@ -485,15 +485,41 @@ formatTime totalSeconds =
         ++ ":"
         ++ String.padLeft 2 '0' (String.fromInt seconds)
 
-getPhaseMessage : GamePhase -> String
+
+
+getPhaseMessage : GamePhase -> List String
 getPhaseMessage phase =
     case phase of
-        Placement -> "Place your pieces on the board"
-        Movement -> "Move your piece to an adjacent position"
-        Flying -> "Fly your piece to any empty position"
-        Removing -> "Mill formed! Remove an opponent's piece"
-        GameOver -> "Game over! Reset the board to play again."
-
+        Placement ->
+            [ "Place your piece"
+            , "Choose a position"
+            , "Place on the board"
+            , "Select a spot"
+            , "Place strategically"
+            ]
+        Movement ->
+            [ "Move to an adjacent position"
+            , "Move your piece"
+            , "Slide to adjacent spot"
+            , "Reposition your piece"
+            ]
+        Flying ->
+            [ "Fly to any position"
+            , "Move anywhere"
+            , "Fly your piece"
+            , "Jump to any spot"
+            ]
+        Removing ->
+            [ "Mill formed, remove opponent piece"
+            , "Remove an opponent piece"
+            , "Three in a row, remove one"
+            , "Mill complete, eliminate piece"
+            ]
+        GameOver ->
+            [ "Game Over"
+            , "Match Complete"
+            , "Victory"
+            ]
 getPieceCounts : Color -> GameState -> Board -> (Int, Int)
 getPieceCounts color gameState board =
     let
@@ -552,14 +578,14 @@ getWinner board =
 viewMillNotification : Html Msg
 viewMillNotification =
     div [ class "mill-notification" ]
-        [ text "MILL FORMED!" ]
+        [ text "MILL FORMED" ]
 
 
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =
     let
         winner = getWinner board
-        winnerText = if winner /= "" then winner ++ " Wins!" else "Game Over"
+        winnerText = if winner /= "" then winner ++ " boom shakalaka" else "heeheeheehaw"
     in
     div
         [ class "fixed inset-0 flex flex-col items-center justify-center z-50"
@@ -585,7 +611,14 @@ view model =
                 , div [ class "text-white text-xl mb-1" ]
                     [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
                 , div [ class "text-gray-300 text-xl min-h-[2rem]" ]
-                    [ text (getPhaseMessage model.gameState.phase) ]
+                    [ text (let
+                                messages = getPhaseMessage model.gameState.phase
+                                seed = model.elapsedTime + model.gameState.whitePiecesPlaced * 7 + model.gameState.blackPiecesPlaced * 13
+                                index = modBy (max 1 (List.length messages)) seed
+                            in
+                            List.drop index messages
+                                |> List.head
+                                |> Maybe.withDefault "") ]
                 ]
             , div [ class "flex justify-center gap-4 mb-4 w-full max-w-lg" ]
                 [ viewPieceCount Black model.gameState model.board
