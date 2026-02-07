@@ -21,11 +21,11 @@ BOARD LAYOUT (positions 0-23):
      6 --------- 5 --------- 4
 -}
 
-import Types exposing (Piece, Color)
+import Types exposing (Piece, Color, Board)
 import Array exposing (Array)
 
 
-pieces : Array (Maybe Piece)
+pieces : Board
 pieces = Array.repeat 24 Nothing
 
 
@@ -51,18 +51,18 @@ getAdjacencies piece =
     |> Maybe.withDefault []
 
 
-getPieceAt : Int -> Array (Maybe Piece) -> Maybe Color
+getPieceAt : Int -> Board -> Maybe Color
 getPieceAt position board =
   Array.get position board
     |> Maybe.andThen identity
     |> Maybe.map .color
 
 
-isPositionEmpty : Int -> Array (Maybe Piece) -> Bool
+isPositionEmpty : Int -> Board -> Bool
 isPositionEmpty position board =
   getPieceAt position board == Nothing
 
-isMill : Piece -> Array (Maybe Piece) -> Bool
+isMill : Piece -> Board -> Bool
 isMill piece board =
     possibleMills
         |> List.filter (\mill -> List.member piece.position mill)
@@ -72,7 +72,7 @@ isMill piece board =
                 |> List.all (\color -> color == Just piece.color)
         )
 
-getMillPositions : Piece -> Array (Maybe Piece) -> List Int
+getMillPositions : Piece -> Board -> List Int
 getMillPositions piece board =
     possibleMills
         |> List.filter (\mill -> List.member piece.position mill)
@@ -84,19 +84,70 @@ getMillPositions piece board =
         |> List.head
         |> Maybe.withDefault []
 
-getAllMillPositions : Array (Maybe Piece) -> List Int
+getAllMillPositions : Board -> List Int
 getAllMillPositions board =
-    possibleMills
-        |> List.filter (\mill ->
-            let
-                colors = List.map (\pos -> getPieceAt pos board) mill
-                firstColor = List.head colors |> Maybe.andThen identity
-            in
-            case firstColor of
-                Just color ->
-                    List.all (\c -> c == Just color) colors
-                Nothing ->
-                    False
-        )
-        |> List.concat
-        |> List.foldl (\pos acc -> if List.member pos acc then acc else pos :: acc) []
+  possibleMills
+    |> List.filter (\mill ->
+      let
+        colors = List.map (\pos -> getPieceAt pos board) mill
+        firstColor = List.head colors |> Maybe.andThen identity
+      in
+      case firstColor of
+        Just color ->
+          List.all (\c -> c == Just color) colors
+        Nothing ->
+          False
+    )
+    |> List.concat
+    |> List.foldl (\pos acc -> if List.member pos acc then acc else pos :: acc) []
+
+
+-- pop up functions
+{- 
+isDoubleMillCycle: Color -> Board -> Board -> Bool
+ - take in current and previous board states for player
+ - if the numMills on the board is the same in both cases, but the mill positions are different, then it's a double mill cycle
+
+isMillCycle: Color -> Board -> Board -> Board -> Bool
+ - take in last 3 states for player
+ - hmmmm
+
+
+helpers:
+getNumMills: Color -> Board -> Int
+ - take in board state
+ - find number of mills :)
+
+isBrokenMill: Color -> Board -> Board -> Bool
+ - take in current and previous board states for player
+ - if numMills decreased by one, return true
+-}
+
+getNumMorris: Color -> Board -> Int
+getNumMorris player board =
+  -- out of all the mills, get only the ones that contain the player's pieces or empty spaces
+  possibleMills
+    |> List.filter (\mill -> List.all (\pos -> getPieceAt pos board == Just player || isPositionEmpty pos board) mill)
+    |> List.map (\mill -> List.map (\pos -> getPieceAt pos board) mill)
+    -- filter for mills with exactly 2 player pieces (morris), then that's how many morrises there are for that player
+    |> List.filter (\mill ->
+      mill
+        |> List.filter (\piece -> piece == Just player)
+        |> List.length
+        |> (\length -> length == 2)
+    )
+    |> List.length
+
+-- helpers
+
+getNumMills: Color -> Board -> Int
+getNumMills player board =
+  board
+    |> getAllMillPositions
+    |> List.filter (\pos -> getPieceAt pos board == Just player)
+    |> List.length
+    |> (\length -> length // 3)
+
+isBrokenMill: Color -> Board -> Board -> Bool
+isBrokenMill player previousBoard currentBoard =
+  getNumMills player previousBoard > getNumMills player currentBoard
