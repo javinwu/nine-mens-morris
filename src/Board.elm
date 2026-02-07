@@ -103,26 +103,6 @@ getAllMillPositions board =
 
 
 -- pop up functions
-{- 
-isDoubleMillCycle: Color -> Board -> Board -> Bool
- - take in current and previous board states for player
- - if the numMills on the board is the same in both cases, but the mill positions are different, then it's a double mill cycle
-
-isMillCycle: Color -> Board -> Board -> Board -> Bool
- - take in last 3 states for player
- - hmmmm
-
-
-helpers:
-getNumMills: Color -> Board -> Int
- - take in board state
- - find number of mills :)
-
-isBrokenMill: Color -> Board -> Board -> Bool
- - take in current and previous board states for player
- - if numMills decreased by one, return true
--}
-
 getNumMorris: Color -> Board -> Int
 getNumMorris player board =
   -- out of all the mills, get only the ones that contain the player's pieces or empty spaces
@@ -138,16 +118,27 @@ getNumMorris player board =
     )
     |> List.length
 
--- helpers
+-- check if the player has the same mill positions after two turns
+isMillCycle: Color -> Board -> Board -> Bool
+isMillCycle player twoTurnsAgo currentBoard =
+  getAllPlayerMillPositions player twoTurnsAgo == getAllPlayerMillPositions player currentBoard
 
+-- Check if the player has the same number of mills after a turn (meaning it must be a double mill cycle)
+isDoubleMillCycle: Color -> Board -> Board -> Bool
+isDoubleMillCycle player previousBoard currentBoard =
+  getNumMills player previousBoard == getNumMills player currentBoard
+
+-- helpers
+-- get all the mill positions for a player
+getAllPlayerMillPositions : Color -> Board -> List Int
+getAllPlayerMillPositions player board =
+  getAllMillPositions board
+    |> List.filter (\pos -> getPieceAt pos board == Just player)
+    
+-- get the number of mills currently on the board for a player
 getNumMills: Color -> Board -> Int
 getNumMills player board =
   board
-    |> getAllMillPositions
-    |> List.filter (\pos -> getPieceAt pos board == Just player)
+    |> getAllPlayerMillPositions player
     |> List.length
     |> (\length -> length // 3)
-
-isBrokenMill: Color -> Board -> Board -> Bool
-isBrokenMill player previousBoard currentBoard =
-  getNumMills player previousBoard > getNumMills player currentBoard
