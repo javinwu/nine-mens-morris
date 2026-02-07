@@ -27,15 +27,15 @@ import Browser
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class)
 import Time
-import List exposing (length)
+--import List exposing (length)
 import Array
-import Maybe.Extra exposing (isNothing)
+--import Maybe.Extra exposing (isNothing)
 import Process
 import Task
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getMillPositions, getAllMillPositions)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions)
 import Sounds exposing (playPlaceSound)
 
 type alias Model =
@@ -189,7 +189,7 @@ handlePlacement pos model =
             newBoard = placePiece pos currentPlayer model.board
             placedPiece = { color = currentPlayer, position = pos }
             formedMill = isMill placedPiece newBoard
-            millPos = if formedMill then getMillPositions placedPiece newBoard else []
+            --millPos = if formedMill then getMillPositions placedPiece newBoard else [] ======================================================================================
 
             (newWhiteCount, newBlackCount) =
                 case currentPlayer of
@@ -284,7 +284,7 @@ attemptMove pos model =
                                 newBoard = placePiece pos selectedColor boardWithRemoved
                                 movedPiece = { color = selectedColor, position = pos }
                                 formedMill = isMill movedPiece newBoard
-                                millPos = if formedMill then getMillPositions movedPiece newBoard else []
+                                -- millPos = if formedMill then getMillPositions movedPiece newBoard else [] ======================================================================================
                                 basePhase = determinePhaseForPlayer model.gameState.currentPlayer newBoard model.gameState
 
                                 (newPhase, nextPhaseAfterRemove) =
