@@ -643,7 +643,9 @@ view model =
                 , div [ class "text-gray-300 text-xl min-h-[2rem]" ]
                     [ text (let
                                 messages = getPhaseMessage model.gameState.phase
-                                seed = model.elapsedTime + model.gameState.whitePiecesPlaced * 7 + model.gameState.blackPiecesPlaced * 13
+                                -- Use piece counts and player as seed so message only changes on game state changes
+                                playerSeed = if model.gameState.currentPlayer == White then 1 else 2
+                                seed = model.gameState.whitePiecesPlaced * 7 + model.gameState.blackPiecesPlaced * 13 + playerSeed
                                 index = modBy (max 1 (List.length messages)) seed
                             in
                             List.drop index messages
