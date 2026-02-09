@@ -35,7 +35,7 @@ import Task
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions, getNumMorris, isMillCycle, isDoubleMillCycle)
 import Sounds exposing (playPlaceSound)
 
 type alias Model =
@@ -580,6 +580,36 @@ viewMillNotification =
     div [ class "mill-notification" ]
         [ text "MILL FORMED" ]
 
+viewMorrisNotification : Color -> Board -> Html Msg
+viewMorrisNotification player board =
+    case getNumMorris player board of
+        2 ->
+            div [ class "mill-notification" ]
+                [ text "DOUBLE MORRIS" ]
+        3 ->
+            div [ class "mill-notification" ]
+                [ text "TRIPLE MORRIS" ]
+        4 ->
+            div [ class "mill-notification" ]
+                [ text "QUADRUPLE MORRIS" ]
+        5 ->
+            div [ class "mill-notification" ]
+                [ text "QUINTUPLE MORRIS" ]
+        6 ->
+            div [ class "mill-notification" ]
+                [ text "SEXTUPLE MORRIS" ]
+        7 ->
+            div [ class "mill-notification" ]
+                [ text "SEPTUPLE MORRIS" ]
+        8 ->
+            div [ class "mill-notification" ]
+                [ text "OCTUPLE MORRIS" ]
+        9 ->
+            div [ class "mill-notification" ]
+                [ text "NONUPLE MORRIS" ]
+        n ->
+            div [ class "mill-notification" ]
+                [ text (String.fromInt n ++ "x MORRIS") ]
 
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =
