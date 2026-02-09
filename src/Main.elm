@@ -491,35 +491,15 @@ getPhaseMessage : GamePhase -> List String
 getPhaseMessage phase =
     case phase of
         Placement ->
-            [ "Place your piece"
-            , "Choose a position"
-            , "Place on the board"
-            , "Select a spot"
-            , "Place strategically"
-            ]
+            [ "Place your piece" ]
         Movement ->
-            [ "Move to an adjacent position"
-            , "Move your piece"
-            , "Slide to adjacent spot"
-            , "Reposition your piece"
-            ]
+            [ "Move to an adjacent position"]
         Flying ->
-            [ "Fly to any position"
-            , "Move anywhere"
-            , "Fly your piece"
-            , "Jump to any spot"
-            ]
+            [ "Fly to any position"]
         Removing ->
-            [ "Mill formed, remove opponent piece"
-            , "Remove an opponent piece"
-            , "Three in a row, remove one"
-            , "Mill complete, eliminate piece"
-            ]
+            [ "Mill formed, remove opponent piece"]
         GameOver ->
-            [ "Game Over"
-            , "Match Complete"
-            , "Victory"
-            ]
+            ["Match Complete"]
 getPieceCounts : Color -> GameState -> Board -> (Int, Int)
 getPieceCounts color gameState board =
     let
@@ -643,7 +623,6 @@ view model =
                 , div [ class "text-gray-300 text-xl min-h-[2rem]" ]
                     [ text (let
                                 messages = getPhaseMessage model.gameState.phase
-                                -- Use piece counts and player as seed so message only changes on game state changes
                                 playerSeed = if model.gameState.currentPlayer == White then 1 else 2
                                 seed = model.gameState.whitePiecesPlaced * 7 + model.gameState.blackPiecesPlaced * 13 + playerSeed
                                 index = modBy (max 1 (List.length messages)) seed
