@@ -588,6 +588,16 @@ viewMillNotification =
     div [ class "mill-notification" ]
         [ text "MILL FORMED" ]
 
+viewMillCycleNotification : Html Msg
+viewMillCycleNotification =
+    div [ class "mill-cycle-notification" ]
+        [ text "MILL CYCLE" ]
+
+viewDoubleMillCycleNotification : Html Msg
+viewDoubleMillCycleNotification =
+    div [ class "mill-cycle-notification" ]
+        [ text "DOUBLE MILL CYCLE" ]
+
 viewMorrisNotification : Color -> Board -> Html Msg
 viewMorrisNotification player board =
     case getNumMills player board of
