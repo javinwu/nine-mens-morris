@@ -138,7 +138,10 @@ getAllPlayerMillPositions player board =
 -- get the number of mills currently on the board for a player
 getNumMills: Color -> Board -> Int
 getNumMills player board =
-  board
-    |> getAllPlayerMillPositions player
+  possibleMills
+    |> List.filter (\mill ->
+      mill
+        |> List.map (\pos -> getPieceAt pos board)
+        |> List.all (\color -> color == Just player)
+    )
     |> List.length
-    |> (\length -> length // 3)

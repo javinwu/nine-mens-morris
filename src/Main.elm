@@ -35,7 +35,7 @@ import Task
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions, getNumMorris, isMillCycle, isDoubleMillCycle)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions, getNumMills, isMillCycle, isDoubleMillCycle)
 import Sounds exposing (playPlaceSound)
 
 type alias Model =
@@ -44,6 +44,7 @@ type alias Model =
     , elapsedTime : Int
     , timerRunning : Bool
     , showMillNotification : Bool
+    , showMorrisNotification : Bool
     }
 
 
@@ -54,6 +55,7 @@ init _ =
       , elapsedTime = 0
       , timerRunning = False
       , showMillNotification = False
+      , showMorrisNotification = False
       }
     , Cmd.none
     )
@@ -65,6 +67,7 @@ type Msg
     | NoOp
     | Tick Time.Posix
     | HideMillNotification
+    | HideMorrisNotification
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -89,8 +92,15 @@ update msg model =
                             |> Task.perform (\_ -> HideMillNotification)
                     else
                         Cmd.none
+
+                morrisNotificationCmd =
+                    if updatedModel.showMorrisNotification && not model.showMorrisNotification then
+                        Process.sleep 2500
+                            |> Task.perform (\_ -> HideMorrisNotification)
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, millNotificationCmd )
+            ( checkAndUpdateTimer updatedModel, Cmd.batch [ millNotificationCmd, morrisNotificationCmd ] )
         
         ClickedPosition pos ->
             let
@@ -122,8 +132,15 @@ update msg model =
                             |> Task.perform (\_ -> HideMillNotification)
                     else
                         Cmd.none
+
+                morrisNotificationCmd =
+                    if updatedModel.showMorrisNotification && not model.showMorrisNotification then
+                        Process.sleep 2500
+                            |> Task.perform (\_ -> HideMorrisNotification)
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, Cmd.batch [ soundCmd, millNotificationCmd ] )
+            ( checkAndUpdateTimer updatedModel, Cmd.batch [ soundCmd, millNotificationCmd, morrisNotificationCmd ] )
 
         NewGame ->
             init ()
@@ -133,6 +150,9 @@ update msg model =
 
         HideMillNotification ->
             ( { model | showMillNotification = False }, Cmd.none )
+
+        HideMorrisNotification ->
+            ( { model | showMorrisNotification = False }, Cmd.none )
 
 checkAndUpdateTimer : Model -> Model
 checkAndUpdateTimer model =
@@ -240,8 +260,12 @@ handlePlacement pos model =
                 , validMovePositions = []
                 , millPositions = getAllMillPositions newBoard
                 }
+
+            numMills = getNumMills currentPlayer newBoard
+            showMorris = formedMill && numMills >= 2
+            showMill = formedMill && not showMorris
         in
-        { model | board = newBoard, gameState = newGameState, showMillNotification = formedMill }
+        { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
     else
         model
 
@@ -305,8 +329,12 @@ attemptMove pos model =
                                     , validMovePositions = []
                                     , millPositions = getAllMillPositions newBoard
                                     }
+
+                                numMills = getNumMills model.gameState.currentPlayer newBoard
+                                showMorris = formedMill && numMills >= 2
+                                showMill = formedMill && not showMorris
                             in
-                            { model | board = newBoard, gameState = newGameState, showMillNotification = formedMill }
+                            { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
                         else
                             model
                     Nothing ->
@@ -497,7 +525,7 @@ getPhaseMessage phase =
         Flying ->
             [ "Fly to any position"]
         Removing ->
-            [ "Mill formed, remove opponent piece"]
+            [ "Mill formed, remove opponent piece" ]
         GameOver ->
             ["Match Complete"]
 getPieceCounts : Color -> GameState -> Board -> (Int, Int)
@@ -525,7 +553,7 @@ viewPieceCount color gameState board =
             Black -> "text-white"
         borderColor =
             if gameState.currentPlayer == color then
-                "border-yellow-400 border-4"
+                "border-yellow-400 border-4s"
             else
                 "border-gray-500 border-2"
     in
@@ -562,33 +590,33 @@ viewMillNotification =
 
 viewMorrisNotification : Color -> Board -> Html Msg
 viewMorrisNotification player board =
-    case getNumMorris player board of
+    case getNumMills player board of
         2 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "DOUBLE MORRIS" ]
         3 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "TRIPLE MORRIS" ]
         4 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "QUADRUPLE MORRIS" ]
         5 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "QUINTUPLE MORRIS" ]
         6 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "SEXTUPLE MORRIS" ]
         7 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "SEPTUPLE MORRIS" ]
         8 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "OCTUPLE MORRIS" ]
         9 ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text "NONUPLE MORRIS" ]
         n ->
-            div [ class "mill-notification" ]
+            div [ class "morris-notification" ]
                 [ text (String.fromInt n ++ "x MORRIS") ]
 
 viewGameOverScreen : Board -> Html Msg
@@ -603,7 +631,7 @@ viewGameOverScreen board =
         ]
         [ div [ class "text-center" ]
             [ div [ class "text-8xl font-bold text-amber-100 mb-8" ]
-                [ text "GAME OVER" ]
+                [ text "MATCH OVER" ]
             , div [ class "text-5xl font-bold text-amber-200 mb-12" ]
                 [ text winnerText ]
             , nextGameButton NewGame
@@ -616,11 +644,11 @@ view model =
     div [ class "min-h-screen flex flex-col items-center justify-center p-4" ]
         [ div [ class "flex flex-col items-center justify-center w-full max-w-2xl mx-auto" ]
             [ div [ class "text-center mb-4 h-24 flex flex-col justify-center" ]
-                [ div [ class "text-white text-3xl mb-1" ]
+                [ div [ class "text-white text-5xl mb-1" ]
                     [ text (formatTime model.elapsedTime) ]
-                , div [ class "text-white text-xl mb-1" ]
+                , div [ class "text-white text-3xl mb-1" ]
                     [ text ("Current Player: " ++ playerToString model.gameState.currentPlayer) ]
-                , div [ class "text-gray-300 text-xl min-h-[2rem]" ]
+                , div [ class "text-gray-300 text-2xl min-h-[2rem]" ]
                     [ text (let
                                 messages = getPhaseMessage model.gameState.phase
                                 playerSeed = if model.gameState.currentPlayer == White then 1 else 2
@@ -645,6 +673,10 @@ view model =
             text ""
         , if model.showMillNotification then
             viewMillNotification
+          else
+            text ""
+        , if model.showMorrisNotification then
+            viewMorrisNotification model.gameState.currentPlayer model.board
           else
             text ""
         ]
