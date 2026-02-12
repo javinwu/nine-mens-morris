@@ -35,7 +35,7 @@ import Task
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions, getNumMills, isMillCycle, isDoubleMillCycle)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions, getNumMorris, isMillCycle, isDoubleMillCycle)
 import Sounds exposing (playPlaceSound)
 
 type alias Model =
@@ -261,9 +261,8 @@ handlePlacement pos model =
                 , millPositions = getAllMillPositions newBoard
                 }
 
-            numMills = getNumMills currentPlayer newBoard
-            showMorris = formedMill && numMills >= 2
-            showMill = formedMill && not showMorris
+            showMorris = getNumMorris model.gameState.currentPlayer newBoard >= 2
+            showMill = formedMill
         in
         { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
     else
@@ -330,9 +329,8 @@ attemptMove pos model =
                                     , millPositions = getAllMillPositions newBoard
                                     }
 
-                                numMills = getNumMills model.gameState.currentPlayer newBoard
-                                showMorris = formedMill && numMills >= 2
-                                showMill = formedMill && not showMorris
+                                showMorris = getNumMorris model.gameState.currentPlayer newBoard >= 2
+                                showMill = formedMill
                             in
                             { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
                         else
@@ -600,7 +598,7 @@ viewDoubleMillCycleNotification =
 
 viewMorrisNotification : Color -> Board -> Html Msg
 viewMorrisNotification player board =
-    case getNumMills player board of
+    case getNumMorris player board of
         2 ->
             div [ class "morris-notification" ]
                 [ text "DOUBLE MORRIS" ]
