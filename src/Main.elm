@@ -45,6 +45,8 @@ type alias Model =
     , timerRunning : Bool
     , showMillNotification : Bool
     , showMorrisNotification : Bool
+    , morrisStreak : Int
+    , morrisPlayer : Maybe Color
     }
 
 
@@ -56,6 +58,8 @@ init _ =
       , timerRunning = False
       , showMillNotification = False
       , showMorrisNotification = False
+      , morrisStreak = 0
+      , morrisPlayer = Nothing
       }
     , Cmd.none
     )
@@ -332,8 +336,23 @@ attemptMove pos model =
 
                                 showMorris = formedMill && isMorris selectedPos movedPiece model.board newBoard
                                 showMill = formedMill && not showMorris
+                                currentPlayer = model.gameState.currentPlayer
+                                newMorrisStreak =
+                                    if showMorris then
+                                        model.morrisStreak + 1
+                                    else if model.morrisPlayer == Just currentPlayer then
+                                        0
+                                    else
+                                        model.morrisStreak
+                                newMorrisPlayer =
+                                    if showMorris then
+                                        Just currentPlayer
+                                    else if model.morrisPlayer == Just currentPlayer then
+                                        Nothing
+                                    else
+                                        model.morrisPlayer
                             in
-                            { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
+                            { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris, morrisStreak = newMorrisStreak, morrisPlayer = newMorrisPlayer }
                         else
                             model
                     Nothing ->
@@ -597,36 +616,10 @@ viewDoubleMillCycleNotification =
     div [ class "mill-cycle-notification" ]
         [ text "DOUBLE MILL CYCLE" ]
 
-viewMorrisNotification : Color -> Board -> Html Msg
-viewMorrisNotification player board =
-    case getNumMorris player board of
-        2 ->
-            div [ class "morris-notification" ]
-                [ text "DOUBLE MORRIS" ]
-        3 ->
-            div [ class "morris-notification" ]
-                [ text "TRIPLE MORRIS" ]
-        4 ->
-            div [ class "morris-notification" ]
-                [ text "QUADRUPLE MORRIS" ]
-        5 ->
-            div [ class "morris-notification" ]
-                [ text "QUINTUPLE MORRIS" ]
-        6 ->
-            div [ class "morris-notification" ]
-                [ text "SEXTUPLE MORRIS" ]
-        7 ->
-            div [ class "morris-notification" ]
-                [ text "SEPTUPLE MORRIS" ]
-        8 ->
-            div [ class "morris-notification" ]
-                [ text "OCTUPLE MORRIS" ]
-        9 ->
-            div [ class "morris-notification" ]
-                [ text "NONUPLE MORRIS" ]
-        n ->
-            div [ class "morris-notification" ]
-                [ text (String.fromInt n ++ "x MORRIS") ]
+viewMorrisNotification : Int -> Html Msg
+viewMorrisNotification streak =
+    div [ class "morris-notification" ]
+        [ text ("MORRUS " ++ String.fromInt streak ++ "x") ]
 
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =
@@ -685,7 +678,7 @@ view model =
           else
             text ""
         , if model.showMorrisNotification then
-            viewMorrisNotification model.gameState.currentPlayer model.board
+            viewMorrisNotification model.morrisStreak
           else
             text ""
         ]
