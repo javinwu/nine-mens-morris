@@ -126,41 +126,7 @@ html {
   will-change: transform, opacity;
 }
 
-<<<<<<< HEAD
-@keyframes millSmooth {
-=======
-/* Morris Notification with Epic Effects TODO: change colors =============================================================================================================================================================*/
-.morris-notification {
-  position: fixed;
-  top: 6rem;
-  right: 2rem;
-  transform: rotate(25deg);
-  transform-origin: center;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-  color: #3e2723;
-  padding: 1.5rem 3rem;
-  border-radius: 1rem;
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-shadow:
-    2px 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(255, 215, 0, 0.8),
-    0 0 20px rgba(255, 215, 0, 0.6);
-  box-shadow:
-    0 0 20px 5px rgba(255, 215, 0, 0.8),
-    0 0 40px 10px rgba(255, 165, 0, 0.6),
-    0 8px 32px rgba(255, 215, 0, 0.5),
-    0 4px 16px rgba(0, 0, 0, 0.3),
-    inset 0 2px 8px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 8px rgba(255, 140, 0, 0.4);
-  border: 4px solid #FFD700;
-  animation: millEpic 2s ease-in-out;
-  z-index: 100;
-  pointer-events: none;
-  white-space: nowrap;
-  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
-}
+@keyframes millSmooth 
 
 /* Mill Cycle Notification with Epic Effects TODO: change colors =============================================================================================================================================================*/
 .mill-cycle-notification {
@@ -257,7 +223,6 @@ html {
 }
 
 @keyframes millEpic {
->>>>>>> e12cd8e (setup other notifications)
   0% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.5);

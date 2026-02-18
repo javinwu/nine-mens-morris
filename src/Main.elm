@@ -35,7 +35,7 @@ import Task
 import Types exposing (Piece, Color(..), Board, GameState, Position, emptyBoard, initialGameState, GamePhase(..), playerToString)
 import View.ViewBoard exposing (viewBoard)
 import View.UI exposing (nextGameButton)
-import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, getAllMillPositions, getNumMorris, isMillCycle, isDoubleMillCycle)
+import Board exposing (getPieceAt, getAdjacencies, isPositionEmpty, isMill, isMorris, getAllMillPositions, getNumMills, isMillCycle, isDoubleMillCycle)
 import Sounds exposing (playPlaceSound)
 
 type alias Model =
@@ -261,7 +261,8 @@ handlePlacement pos model =
                 , millPositions = getAllMillPositions newBoard
                 }
 
-            showMorris = getNumMorris model.gameState.currentPlayer newBoard >= 2
+            -- Morris can't happen during placement (no piece is being moved from a mill)
+            showMorris = False
             showMill = formedMill
         in
         { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
@@ -329,8 +330,8 @@ attemptMove pos model =
                                     , millPositions = getAllMillPositions newBoard
                                     }
 
-                                showMorris = getNumMorris model.gameState.currentPlayer newBoard >= 2
-                                showMill = formedMill
+                                showMorris = formedMill && isMorris selectedPos movedPiece model.board newBoard
+                                showMill = formedMill && not showMorris
                             in
                             { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
                         else
