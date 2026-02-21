@@ -619,7 +619,7 @@ viewDoubleMillCycleNotification =
 viewMorrisNotification : Int -> Html Msg
 viewMorrisNotification streak =
     div [ class "morris-notification" ]
-        [ text ("MORRUS " ++ String.fromInt streak ++ "x") ]
+        [ text ("MORRUS " ++ String.fromInt streak ++ "X") ]
 
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =

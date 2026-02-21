@@ -101,14 +101,14 @@ html {
 /* Mill Notification - Smooth Style */
 .mill-notification {
   position: fixed;
-  top: 50%;
+  top: 1.5rem;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
   color: #3e2723;
-  padding: 1.5rem 3rem;
+  padding: 0.75rem 2rem;
   border-radius: 1rem;
-  font-size: 4rem;
+  font-size: 2.5rem;
   font-weight: 900;
   letter-spacing: 0.1em;
   text-shadow:
@@ -118,7 +118,7 @@ html {
     0 0 20px 5px rgba(255, 215, 0, 0.7),
     0 0 40px 10px rgba(255, 165, 0, 0.5),
     inset 0 2px 8px rgba(255, 255, 255, 0.4);
-  border: 4px solid #FFD700;
+  border: 3px solid #FFD700;
   animation: millSmooth 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 100;
   pointer-events: none;
@@ -126,187 +126,185 @@ html {
   will-change: transform, opacity;
 }
 
-@keyframes millSmooth 
-
-/* Mill Cycle Notification with Epic Effects TODO: change colors =============================================================================================================================================================*/
-.mill-cycle-notification {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-  color: #3e2723;
-  padding: 1.5rem 3rem;
-  border-radius: 1rem;
-  font-size: 4rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-shadow:
-    2px 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(255, 215, 0, 0.8);
-  box-shadow:
-    0 0 20px 5px rgba(255, 215, 0, 0.7),
-    0 0 40px 10px rgba(255, 165, 0, 0.5),
-    inset 0 2px 8px rgba(255, 255, 255, 0.4);
-  border: 4px solid #FFD700;
-  animation: millSmooth 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 100;
-  pointer-events: none;
-  white-space: nowrap;
-  will-change: transform, opacity;
-}
-
-/* Morris Notification with Epic Effects TODO: change colors =============================================================================================================================================================*/
-.morris-notification {
-  position: fixed;
-  top: 6rem;
-  right: 2rem;
-  transform: rotate(25deg);
-  transform-origin: center;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-  color: #3e2723;
-  padding: 1.5rem 3rem;
-  border-radius: 1rem;
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-shadow:
-    2px 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(255, 215, 0, 0.8),
-    0 0 20px rgba(255, 215, 0, 0.6);
-  box-shadow:
-    0 0 20px 5px rgba(255, 215, 0, 0.8),
-    0 0 40px 10px rgba(255, 165, 0, 0.6),
-    0 8px 32px rgba(255, 215, 0, 0.5),
-    0 4px 16px rgba(0, 0, 0, 0.3),
-    inset 0 2px 8px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 8px rgba(255, 140, 0, 0.4);
-  border: 4px solid #FFD700;
-  animation: millEpic 2s ease-in-out;
-  z-index: 100;
-  pointer-events: none;
-  white-space: nowrap;
-  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
-}
-
-/* Mill Cycle Notification with Epic Effects TODO: change colors =============================================================================================================================================================*/
-.mill-cycle-notification {
-  position: fixed;
-  top: 6rem;
-  right: 2rem;
-  transform: rotate(25deg);
-  transform-origin: center;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-  color: #3e2723;
-  padding: 1.5rem 3rem;
-  border-radius: 1rem;
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-shadow:
-    2px 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(255, 215, 0, 0.8),
-    0 0 20px rgba(255, 215, 0, 0.6);
-  box-shadow:
-    0 0 20px 5px rgba(255, 215, 0, 0.8),
-    0 0 40px 10px rgba(255, 165, 0, 0.6),
-    0 8px 32px rgba(255, 215, 0, 0.5),
-    0 4px 16px rgba(0, 0, 0, 0.3),
-    inset 0 2px 8px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 8px rgba(255, 140, 0, 0.4);
-  border: 4px solid #FFD700;
-  animation: millEpic 2s ease-in-out;
-  z-index: 100;
-  pointer-events: none;
-  white-space: nowrap;
-  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
-}
-
-@keyframes millEpic {
+@keyframes millSmooth {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translateX(-50%) scale(0.5);
   }
   15% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.15);
+    transform: translateX(-50%) scale(1.15);
   }
   25% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   35% {
-    transform: translate(-50%, -50%) scale(1.05);
+    transform: translateX(-50%) scale(1.05);
   }
   45% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   80% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: translateX(-50%) scale(0.8);
   }
 }
 
-/* Morris Notification (2+ mills) - Smooth Epic Style */
+/* Morris Notification - Legendary rare event */
 .morris-notification {
   position: fixed;
-  top: 50%;
+  top: 1.5rem;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, #9400D3 0%, #FF1493 50%, #9400D3 100%);
+  transform: translateX(-50%);
+  transform-origin: center;
+  background: linear-gradient(135deg, #FFD700 0%, #FF6B00 30%, #FF0044 60%, #FFD700 100%);
+  background-size: 300% 300%;
   color: #fff;
-  padding: 2rem 4rem;
-  border-radius: 1.5rem;
-  font-size: 4.5rem;
+  padding: 1rem 2.5rem;
+  border-radius: 1rem;
+  font-size: 2.5rem;
   font-weight: 900;
   letter-spacing: 0.15em;
   text-transform: uppercase;
   text-shadow:
-    0 0 10px #fff,
-    0 0 20px #FF1493,
+    0 0 10px rgba(255, 255, 255, 0.9),
+    0 0 20px rgba(255, 215, 0, 1),
+    0 0 40px rgba(255, 100, 0, 0.8),
+    0 0 60px rgba(255, 0, 68, 0.5),
     2px 2px 4px rgba(0, 0, 0, 0.5);
   box-shadow:
-    0 0 30px 10px rgba(148, 0, 211, 0.7),
-    0 0 60px 15px rgba(255, 20, 147, 0.5),
-    inset 0 2px 10px rgba(255, 255, 255, 0.3);
-  border: 4px solid #FF1493;
-  animation: morrisSmooth 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 101;
+    0 0 30px 10px rgba(255, 215, 0, 0.8),
+    0 0 60px 20px rgba(255, 100, 0, 0.5),
+    0 0 90px 30px rgba(255, 0, 68, 0.3),
+    inset 0 2px 10px rgba(255, 255, 255, 0.6),
+    inset 0 -2px 10px rgba(255, 100, 0, 0.5);
+  border: 3px solid rgba(255, 255, 255, 0.8);
+  animation: morrisLegendary 2.5s ease-out, morrisGlow 1s ease-in-out 0.3s infinite alternate;
+  z-index: 100;
   pointer-events: none;
   white-space: nowrap;
-  will-change: transform, opacity;
+  filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1));
 }
 
-@keyframes morrisSmooth {
+/* Mill Cycle Notification */
+.mill-cycle-notification {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: center;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+  color: #3e2723;
+  padding: 0.75rem 2rem;
+  border-radius: 1rem;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.3),
+    0 0 10px rgba(255, 215, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.6);
+  box-shadow:
+    0 0 20px 5px rgba(255, 215, 0, 0.8),
+    0 0 40px 10px rgba(255, 165, 0, 0.6),
+    inset 0 2px 8px rgba(255, 255, 255, 0.4),
+    inset 0 -2px 8px rgba(255, 140, 0, 0.4);
+  border: 3px solid #FFD700;
+  animation: millCycleSmooth 2s ease-in-out;
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
+}
+
+@keyframes millCycleSmooth {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.5);
+    transform: translateX(-50%) scale(0.5);
   }
   15% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.15);
+    transform: translateX(-50%) scale(1.15);
   }
   25% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   35% {
-    transform: translate(-50%, -50%) scale(1.05);
+    transform: translateX(-50%) scale(1.05);
   }
   45% {
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   80% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: translateX(-50%) scale(0.8);
   }
 }
+
+/* Morris legendary entrance */
+@keyframes morrisLegendary {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.3);
+    filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0)) brightness(3);
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.3);
+    filter: drop-shadow(0 0 40px rgba(255, 215, 0, 1)) brightness(2);
+  }
+  20% {
+    transform: translateX(-50%) scale(0.95);
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) brightness(1.5);
+  }
+  30% {
+    transform: translateX(-50%) scale(1.1);
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1)) brightness(1.2);
+  }
+  40% {
+    transform: translateX(-50%) scale(1);
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1)) brightness(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1));
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.9);
+    filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0));
+  }
+}
+
+/* Morris pulsing glow */
+@keyframes morrisGlow {
+  from {
+    box-shadow:
+      0 0 30px 10px rgba(255, 215, 0, 0.8),
+      0 0 60px 20px rgba(255, 100, 0, 0.5),
+      0 0 90px 30px rgba(255, 0, 68, 0.3),
+      inset 0 2px 10px rgba(255, 255, 255, 0.6),
+      inset 0 -2px 10px rgba(255, 100, 0, 0.5);
+  }
+  to {
+    box-shadow:
+      0 0 40px 15px rgba(255, 215, 0, 1),
+      0 0 80px 30px rgba(255, 100, 0, 0.7),
+      0 0 110px 40px rgba(255, 0, 68, 0.4),
+      inset 0 2px 10px rgba(255, 255, 255, 0.8),
+      inset 0 -2px 10px rgba(255, 100, 0, 0.7);
+  }
+}
+
 
 /* Mill Piece Glow Effect - Static for performance */
 .mill-piece {
