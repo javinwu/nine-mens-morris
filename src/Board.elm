@@ -102,15 +102,22 @@ getAllMillPositions board =
     |> List.foldl (\pos acc -> if List.member pos acc then acc else pos :: acc) []
 
 
--- A morris is when you move a piece FROM a completed mill (breaking it) TO complete a different mill
-isMorris : Int -> Piece -> Board -> Board -> Bool
-isMorris fromPos movedPiece oldBoard newBoard =
-    let
-        originPiece = { color = movedPiece.color, position = fromPos }
-        wasInMill = isMill originPiece oldBoard
-        formsNewMill = isMill movedPiece newBoard
-    in
-    wasInMill && formsNewMill
+-- A morris is when you move a piece FROM a completed mill (breaking it) TO complete a different mill <-- stupid drater boy javin doesn't even know what a morris is
+-- ACTUAL morris definition: when you get two in a row. pretty simple. a double morris is when you have exactly two (2) mill threats, essentially securing the construction of a mill. the above definition is the definition of a double mill cycle. nivaj si a nikcuf drater
+getNumMorris: Color -> Board -> Int
+getNumMorris player board =
+  -- out of all the mills, get only the ones that contain the player's pieces or empty spaces
+  possibleMills
+    |> List.filter (\mill -> List.all (\pos -> getPieceAt pos board == Just player || isPositionEmpty pos board) mill)
+    |> List.map (\mill -> List.map (\pos -> getPieceAt pos board) mill)
+    -- filter for mills with exactly 2 player pieces (morris), then that's how many morrises there are for that player
+    |> List.filter (\mill ->
+      mill
+        |> List.filter (\piece -> piece == Just player)
+        |> List.length
+        |> (\length -> length == 2)
+    )
+    |> List.length
 
 -- check if the player has the same mill positions after two turns
 isMillCycle: Color -> Board -> Board -> Bool
