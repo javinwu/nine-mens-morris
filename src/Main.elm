@@ -263,8 +263,7 @@ handlePlacement pos model =
                 , millPositions = getAllMillPositions newBoard
                 }
 
-            -- Morris can't happen during placement (no piece is being moved from a mill)
-            showMorris = False
+            showMorris = getNumMorris model.gameState.currentPlayer model.board >= 2
             showMill = formedMill
         in
         { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
