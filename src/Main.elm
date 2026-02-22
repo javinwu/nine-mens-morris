@@ -636,9 +636,9 @@ viewMorrisNotification player board =
         10 ->
             div [ class "morris-notification" ]
                 [ text "DECUPLE MORRIS" ]
-        n ->
+        _ ->
             div [ class "morris-notification" ]
-                [ text (String.fromInt n ++ "x MORRIS") ]
+                [ text "ULTIMATE MORRIS" ]
 
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =
