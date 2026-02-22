@@ -620,10 +620,10 @@ viewMorrisNotification player board =
                 [ text "QUADRUPLE MORRIS" ]
         5 ->
             div [ class "morris-notification" ]
-                [ text "QUINTOUPLE MORRIS" ]
+                [ text "QUINTUPLE MORRIS" ]
         6 ->
             div [ class "morris-notification" ]
-                [ text "SEXTOUPLE MORRIS" ]
+                [ text "SEXTUPLE MORRIS" ]
         7 ->
             div [ class "morris-notification" ]
                 [ text "SEPTUPLE MORRIS" ]

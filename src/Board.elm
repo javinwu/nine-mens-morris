@@ -102,6 +102,23 @@ getAllMillPositions board =
     |> List.foldl (\pos acc -> if List.member pos acc then acc else pos :: acc) []
 
 
+-- JAVIN READ THIS IMMEDIATELY VERY IMPORTATAN:
+{- 
+the getNumMorris function works as the following:
+
+inputs: Color and Board
+Color: color of the current player to check how many morrises they have
+Board: current board to check locations of pieces to see how many morrises there are for the given player
+
+outputs: Int
+the number of morrises for the given player
+
+usage:
+call this function to see how many morrises a player has.
+if they have two or more, do a popup for that number of morrises
+  the morris popup function already exists and displays the correct text depending on the number of morrises
+-}
+
 -- A morris is when you move a piece FROM a completed mill (breaking it) TO complete a different mill <-- stupid drater boy javin doesn't even know what a morris is
 -- ACTUAL morris definition: when you get two in a row. pretty simple. a double morris is when you have exactly two (2) mill threats, essentially securing the construction of a mill. the above definition is the definition of a double mill cycle. nivaj si a nikcuf drater
 getNumMorris: Color -> Board -> Int
