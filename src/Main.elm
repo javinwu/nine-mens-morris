@@ -263,10 +263,17 @@ handlePlacement pos model =
                 , millPositions = getAllMillPositions newBoard
                 }
 
-            showMorris = getNumMorris model.gameState.currentPlayer model.board >= 2
+            showMorris = getNumMorris currentPlayer newBoard >= 2
             showMill = formedMill
+            newMorrisPlayer =
+                if showMorris then
+                    Just currentPlayer
+                else if model.morrisPlayer == Just currentPlayer then
+                    Nothing
+                else
+                    model.morrisPlayer
         in
-        { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris }
+        { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris, morrisPlayer = newMorrisPlayer }
     else
         model
 
@@ -636,9 +643,9 @@ viewMorrisNotification player board =
         10 ->
             div [ class "morris-notification" ]
                 [ text "DECUPLE MORRIS" ]
-        _ ->
+        n ->
             div [ class "morris-notification" ]
-                [ text "ULTIMATE MORRIS" ]
+                [ text (String.fromInt n ++ "x MORRIS") ]
 
 viewGameOverScreen : Board -> Html Msg
 viewGameOverScreen board =
@@ -696,10 +703,14 @@ view model =
             viewMillNotification
           else
             text ""
-        , if model.showMorrisNotification then
-            viewMorrisNotification model.gameState.currentPlayer model.board
-          else
-            text ""
+        , case model.morrisPlayer of
+            Just morrisColor ->
+                if model.showMorrisNotification then
+                    viewMorrisNotification morrisColor model.board
+                else
+                    text ""
+            Nothing ->
+                text ""
         ]
 
 main : Program () Model Msg
