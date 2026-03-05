@@ -46,6 +46,16 @@ type alias Model =
     , showMillNotification : Bool
     , showMorrisNotification : Bool
     , morrisPlayer : Maybe Color
+    , showMillCycleNotification : Bool
+    , showDoubleMillCycleNotification : Bool
+    , millCyclePlayer : Maybe Color
+    , doubleMillCyclePlayer : Maybe Color
+    , lastWhiteBoard : Maybe Board
+    , lastBlackBoard : Maybe Board
+    , whiteMillCycleCount : Int
+    , blackMillCycleCount : Int
+    , whiteDoubleMillCycleCount : Int
+    , blackDoubleMillCycleCount : Int
     }
 
 
@@ -58,6 +68,16 @@ init _ =
       , showMillNotification = False
       , showMorrisNotification = False
       , morrisPlayer = Nothing
+      , showMillCycleNotification = False
+      , showDoubleMillCycleNotification = False
+      , millCyclePlayer = Nothing
+      , doubleMillCyclePlayer = Nothing
+      , lastWhiteBoard = Nothing
+      , lastBlackBoard = Nothing
+      , whiteMillCycleCount = 0
+      , blackMillCycleCount = 0
+      , whiteDoubleMillCycleCount = 0
+      , blackDoubleMillCycleCount = 0
       }
     , Cmd.none
     )
@@ -70,6 +90,8 @@ type Msg
     | Tick Time.Posix
     | HideMillNotification
     | HideMorrisNotification
+    | HideMillCycleNotification
+    | HideDoubleMillCycleNotification
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -101,8 +123,22 @@ update msg model =
                             |> Task.perform (\_ -> HideMorrisNotification)
                     else
                         Cmd.none
+
+                millCycleCmd =
+                    if updatedModel.showMillCycleNotification && not model.showMillCycleNotification then
+                        Process.sleep 2500
+                            |> Task.perform (\_ -> HideMillCycleNotification)
+                    else
+                        Cmd.none
+
+                doubleMillCycleCmd =
+                    if updatedModel.showDoubleMillCycleNotification && not model.showDoubleMillCycleNotification then
+                        Process.sleep 3000
+                            |> Task.perform (\_ -> HideDoubleMillCycleNotification)
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, Cmd.batch [ millNotificationCmd, morrisNotificationCmd ] )
+            ( checkAndUpdateTimer updatedModel, Cmd.batch [ millNotificationCmd, morrisNotificationCmd, millCycleCmd, doubleMillCycleCmd ] )
         
         ClickedPosition pos ->
             let
@@ -141,8 +177,22 @@ update msg model =
                             |> Task.perform (\_ -> HideMorrisNotification)
                     else
                         Cmd.none
+
+                millCycleCmd =
+                    if updatedModel.showMillCycleNotification && not model.showMillCycleNotification then
+                        Process.sleep 2500
+                            |> Task.perform (\_ -> HideMillCycleNotification)
+                    else
+                        Cmd.none
+
+                doubleMillCycleCmd =
+                    if updatedModel.showDoubleMillCycleNotification && not model.showDoubleMillCycleNotification then
+                        Process.sleep 3000
+                            |> Task.perform (\_ -> HideDoubleMillCycleNotification)
+                    else
+                        Cmd.none
             in
-            ( checkAndUpdateTimer updatedModel, Cmd.batch [ soundCmd, millNotificationCmd, morrisNotificationCmd ] )
+            ( checkAndUpdateTimer updatedModel, Cmd.batch [ soundCmd, millNotificationCmd, morrisNotificationCmd, millCycleCmd, doubleMillCycleCmd ] )
 
         NewGame ->
             init ()
@@ -155,6 +205,12 @@ update msg model =
 
         HideMorrisNotification ->
             ( { model | showMorrisNotification = False }, Cmd.none )
+
+        HideMillCycleNotification ->
+            ( { model | showMillCycleNotification = False }, Cmd.none )
+
+        HideDoubleMillCycleNotification ->
+            ( { model | showDoubleMillCycleNotification = False }, Cmd.none )
 
 checkAndUpdateTimer : Model -> Model
 checkAndUpdateTimer model =
@@ -316,7 +372,6 @@ attemptMove pos model =
                                 newBoard = placePiece pos selectedColor boardWithRemoved
                                 movedPiece = { color = selectedColor, position = pos }
                                 formedMill = isMill movedPiece newBoard
-                                -- millPos = if formedMill then getMillPositions movedPiece newBoard else [] ======================================================================================
                                 basePhase = determinePhaseForPlayer model.gameState.currentPlayer newBoard model.gameState
 
                                 (newPhase, nextPhaseAfterRemove) =
@@ -348,8 +403,65 @@ attemptMove pos model =
                                         Nothing
                                     else
                                         model.morrisPlayer
+
+                                -- Double mill cycle: piece was in a mill BEFORE moving, AND forms a new mill AFTER moving
+                                pieceBeforeMove = { color = selectedColor, position = selectedPos }
+                                wasInMill = isMill pieceBeforeMove model.board
+                                isDoubleMC = wasInMill && formedMill
+
+                                -- Mill cycle: player's mill positions match their previous turn (moved out then back)
+                                lastBoard =
+                                    case currentPlayer of
+                                        White -> model.lastWhiteBoard
+                                        Black -> model.lastBlackBoard
+                                isRegularMC =
+                                    if formedMill && not isDoubleMC then
+                                        case lastBoard of
+                                            Just prevBoard -> isMillCycle currentPlayer prevBoard newBoard
+                                            Nothing -> False
+                                    else
+                                        False
+
+                                -- Update counters
+                                (newWMC, newBMC) =
+                                    if isRegularMC then
+                                        case currentPlayer of
+                                            White -> (model.whiteMillCycleCount + 1, model.blackMillCycleCount)
+                                            Black -> (model.whiteMillCycleCount, model.blackMillCycleCount + 1)
+                                    else
+                                        (model.whiteMillCycleCount, model.blackMillCycleCount)
+
+                                (newWDMC, newBDMC) =
+                                    if isDoubleMC then
+                                        case currentPlayer of
+                                            White -> (model.whiteDoubleMillCycleCount + 1, model.blackDoubleMillCycleCount)
+                                            Black -> (model.whiteDoubleMillCycleCount, model.blackDoubleMillCycleCount + 1)
+                                    else
+                                        (model.whiteDoubleMillCycleCount, model.blackDoubleMillCycleCount)
+
+                                -- Store this board as the player's last board
+                                (newLastWhite, newLastBlack) =
+                                    case currentPlayer of
+                                        White -> (Just newBoard, model.lastBlackBoard)
+                                        Black -> (model.lastWhiteBoard, Just newBoard)
                             in
-                            { model | board = newBoard, gameState = newGameState, showMillNotification = showMill, showMorrisNotification = showMorris, morrisPlayer = newMorrisPlayer }
+                            { model
+                                | board = newBoard
+                                , gameState = newGameState
+                                , showMillNotification = showMill
+                                , showMorrisNotification = showMorris
+                                , morrisPlayer = newMorrisPlayer
+                                , showMillCycleNotification = isRegularMC
+                                , showDoubleMillCycleNotification = isDoubleMC
+                                , millCyclePlayer = if isRegularMC then Just currentPlayer else model.millCyclePlayer
+                                , doubleMillCyclePlayer = if isDoubleMC then Just currentPlayer else model.doubleMillCyclePlayer
+                                , lastWhiteBoard = newLastWhite
+                                , lastBlackBoard = newLastBlack
+                                , whiteMillCycleCount = newWMC
+                                , blackMillCycleCount = newBMC
+                                , whiteDoubleMillCycleCount = newWDMC
+                                , blackDoubleMillCycleCount = newBDMC
+                            }
                         else
                             model
                     Nothing ->
@@ -572,6 +684,7 @@ viewPieceCount color gameState board =
             else
                 "border-gray-500 border-2"
     in
+    
     div [ class ("px-4 py-3 rounded-lg " ++ bgColor ++ " " ++ textColor ++ " " ++ borderColor) ]
         [ div [ class "font-bold text-2xl mb-1" ] [ text colorName ]
         , div [ class "text-lg" ] [ text ("On board: " ++ String.fromInt onBoard) ]
@@ -603,15 +716,15 @@ viewMillNotification =
     div [ class "mill-notification" ]
         [ text "MILL FORMED" ]
 
-viewMillCycleNotification : Html Msg
-viewMillCycleNotification =
+viewMillCycleNotification : Int -> Html Msg
+viewMillCycleNotification count =
     div [ class "mill-cycle-notification" ]
-        [ text "MILL CYCLE" ]
+        [ text ("MILL CYCLE X" ++ String.fromInt count) ]
 
-viewDoubleMillCycleNotification : Html Msg
-viewDoubleMillCycleNotification =
-    div [ class "mill-cycle-notification" ]
-        [ text "DOUBLE MILL CYCLE" ]
+viewDoubleMillCycleNotification : Int -> Html Msg
+viewDoubleMillCycleNotification count =
+    div [ class "double-mill-cycle-notification" ]
+        [ text ("DOUBLE MILL CYCLE X" ++ String.fromInt count) ]
 
 viewMorrisNotification : Color -> Board -> Html Msg
 viewMorrisNotification player board =
@@ -699,18 +812,48 @@ view model =
             viewGameOverScreen model.board
           else
             text ""
-        , if model.showMillNotification then
-            viewMillNotification
-          else
-            text ""
-        , case model.morrisPlayer of
-            Just morrisColor ->
-                if model.showMorrisNotification then
-                    viewMorrisNotification morrisColor model.board
-                else
-                    text ""
-            Nothing ->
+        , div [ class "notifications-container" ]
+            [ if model.showMillNotification then
+                viewMillNotification
+              else
                 text ""
+            , case model.morrisPlayer of
+                Just morrisColor ->
+                    if model.showMorrisNotification then
+                        viewMorrisNotification morrisColor model.board
+                    else
+                        text ""
+                Nothing ->
+                    text ""
+            , if model.showMillCycleNotification then
+                case model.millCyclePlayer of
+                    Just player ->
+                        let
+                            count =
+                                case player of
+                                    White -> model.whiteMillCycleCount
+                                    Black -> model.blackMillCycleCount
+                        in
+                        viewMillCycleNotification count
+                    Nothing ->
+                        text ""
+              else
+                text ""
+            , if model.showDoubleMillCycleNotification then
+                case model.doubleMillCyclePlayer of
+                    Just player ->
+                        let
+                            count =
+                                case player of
+                                    White -> model.whiteDoubleMillCycleCount
+                                    Black -> model.blackDoubleMillCycleCount
+                        in
+                        viewDoubleMillCycleNotification count
+                    Nothing ->
+                        text ""
+              else
+                text ""
+            ]
         ]
 
 main : Program () Model Msg

@@ -98,12 +98,21 @@ html {
               inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
 }
 
-/* Mill Notification - Smooth Style */
-.mill-notification {
+/* Notifications Container - side by side layout */
+.notifications-container {
   position: fixed;
   top: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Mill Notification - Smooth Style */
+.mill-notification {
   background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
   color: #3e2723;
   padding: 0.75rem 2rem;
@@ -120,8 +129,6 @@ html {
     inset 0 2px 8px rgba(255, 255, 255, 0.4);
   border: 3px solid #FFD700;
   animation: millSmooth 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  z-index: 100;
-  pointer-events: none;
   white-space: nowrap;
   will-change: transform, opacity;
 }
@@ -129,40 +136,35 @@ html {
 @keyframes millSmooth {
   0% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.5);
+    transform: scale(0.5);
   }
   15% {
     opacity: 1;
-    transform: translateX(-50%) scale(1.15);
+    transform: scale(1.15);
   }
   25% {
-    transform: translateX(-50%) scale(1);
+    transform: scale(1);
   }
   35% {
-    transform: translateX(-50%) scale(1.05);
+    transform: scale(1.05);
   }
   45% {
-    transform: translateX(-50%) scale(1);
+    transform: scale(1);
   }
   80% {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.8);
+    transform: scale(0.8);
   }
 }
 
 /* Morris Notification - Legendary rare event */
 .morris-notification {
-  position: fixed;
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
   transform-origin: center;
   background: linear-gradient(135deg, #FFD700 0%, #FF6B00 30%, #FF0044 60%, #FFD700 100%);
-  background-size: 300% 300%;
   color: #fff;
   padding: 1rem 2.5rem;
   border-radius: 1rem;
@@ -183,125 +185,157 @@ html {
     inset 0 2px 10px rgba(255, 255, 255, 0.6),
     inset 0 -2px 10px rgba(255, 100, 0, 0.5);
   border: 3px solid rgba(255, 255, 255, 0.8);
-  animation: morrisLegendary 2.5s ease-out forwards, morrisGlow 1s ease-in-out 0.3s infinite alternate;
-  z-index: 100;
-  pointer-events: none;
+  animation: morrisLegendary 2.5s ease-out forwards;
   white-space: nowrap;
-  filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1));
+  will-change: transform, opacity;
 }
 
-/* Mill Cycle Notification */
+/* Mill Cycle Notification - Purple Legendary */
 .mill-cycle-notification {
-  position: fixed;
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
   transform-origin: center;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
-  color: #3e2723;
-  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #9B30FF 0%, #7B2FBE 30%, #A855F7 60%, #C084FC 100%);
+  color: #fff;
+  padding: 0.85rem 2.2rem;
   border-radius: 1rem;
   font-size: 2.5rem;
   font-weight: 900;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   text-shadow:
-    2px 2px 4px rgba(0, 0, 0, 0.3),
-    0 0 10px rgba(255, 215, 0, 0.8),
-    0 0 20px rgba(255, 215, 0, 0.6);
+    0 0 10px rgba(255, 255, 255, 0.8),
+    0 0 20px rgba(168, 85, 247, 1),
+    0 0 40px rgba(147, 51, 234, 0.7),
+    2px 2px 4px rgba(0, 0, 0, 0.5);
   box-shadow:
-    0 0 20px 5px rgba(255, 215, 0, 0.8),
-    0 0 40px 10px rgba(255, 165, 0, 0.6),
+    0 0 25px 8px rgba(168, 85, 247, 0.8),
+    0 0 50px 15px rgba(147, 51, 234, 0.5),
+    0 0 75px 20px rgba(126, 34, 206, 0.3),
     inset 0 2px 8px rgba(255, 255, 255, 0.4),
-    inset 0 -2px 8px rgba(255, 140, 0, 0.4);
-  border: 3px solid #FFD700;
-  animation: millCycleSmooth 2s ease-in-out forwards;
-  z-index: 100;
-  pointer-events: none;
+    inset 0 -2px 8px rgba(107, 33, 168, 0.5);
+  border: 3px solid rgba(192, 132, 252, 0.8);
+  animation: millCycleSmooth 2.5s ease-out forwards;
   white-space: nowrap;
-  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.9));
+  will-change: transform, opacity;
 }
 
 @keyframes millCycleSmooth {
   0% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.5);
+    transform: scale(0.4);
   }
-  15% {
+  12% {
     opacity: 1;
-    transform: translateX(-50%) scale(1.15);
+    transform: scale(1.2);
   }
-  25% {
-    transform: translateX(-50%) scale(1);
+  22% {
+    transform: scale(0.95);
   }
-  35% {
-    transform: translateX(-50%) scale(1.05);
+  32% {
+    transform: scale(1.08);
   }
-  45% {
-    transform: translateX(-50%) scale(1);
+  42% {
+    transform: scale(1);
   }
   80% {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.8);
+    transform: scale(0.85);
   }
+}
+
+/* Double Mill Cycle Notification - Ultra Legendary */
+.double-mill-cycle-notification {
+  transform-origin: center;
+  background: linear-gradient(135deg, #FF00FF 0%, #8B00FF 25%, #00BFFF 50%, #FF00FF 75%, #FFD700 100%);
+  background-size: 400% 400%;
+  color: #fff;
+  padding: 1.1rem 2.8rem;
+  border-radius: 1rem;
+  font-size: 2.7rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 1),
+    0 0 25px rgba(255, 0, 255, 1),
+    0 0 50px rgba(139, 0, 255, 0.9),
+    0 0 80px rgba(0, 191, 255, 0.6),
+    3px 3px 6px rgba(0, 0, 0, 0.6);
+  box-shadow:
+    0 0 35px 12px rgba(255, 0, 255, 0.9),
+    0 0 70px 25px rgba(139, 0, 255, 0.6),
+    0 0 110px 40px rgba(0, 191, 255, 0.3),
+    inset 0 3px 12px rgba(255, 255, 255, 0.6),
+    inset 0 -3px 12px rgba(139, 0, 255, 0.6);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  animation: doubleMillCycleLegendary 3s ease-out forwards, doubleMillCycleShift 2s ease-in-out infinite;
+  white-space: nowrap;
+  will-change: transform, opacity;
+}
+
+@keyframes doubleMillCycleLegendary {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-5deg);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1.4) rotate(2deg);
+  }
+  16% {
+    transform: scale(0.9) rotate(-1deg);
+  }
+  24% {
+    transform: scale(1.15) rotate(1deg);
+  }
+  34% {
+    transform: scale(1) rotate(0deg);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85) rotate(0deg);
+  }
+}
+
+@keyframes doubleMillCycleShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Morris legendary entrance */
 @keyframes morrisLegendary {
   0% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.3);
-    filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0)) brightness(3);
+    transform: scale(0.3);
   }
   10% {
     opacity: 1;
-    transform: translateX(-50%) scale(1.3);
-    filter: drop-shadow(0 0 40px rgba(255, 215, 0, 1)) brightness(2);
+    transform: scale(1.3);
   }
   20% {
-    transform: translateX(-50%) scale(0.95);
-    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)) brightness(1.5);
+    transform: scale(0.95);
   }
   30% {
-    transform: translateX(-50%) scale(1.1);
-    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1)) brightness(1.2);
+    transform: scale(1.1);
   }
   40% {
-    transform: translateX(-50%) scale(1);
-    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1)) brightness(1);
+    transform: scale(1);
   }
   80% {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
-    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1));
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.9);
-    filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0));
-  }
-}
-
-/* Morris pulsing glow */
-@keyframes morrisGlow {
-  from {
-    box-shadow:
-      0 0 30px 10px rgba(255, 215, 0, 0.8),
-      0 0 60px 20px rgba(255, 100, 0, 0.5),
-      0 0 90px 30px rgba(255, 0, 68, 0.3),
-      inset 0 2px 10px rgba(255, 255, 255, 0.6),
-      inset 0 -2px 10px rgba(255, 100, 0, 0.5);
-  }
-  to {
-    box-shadow:
-      0 0 40px 15px rgba(255, 215, 0, 1),
-      0 0 80px 30px rgba(255, 100, 0, 0.7),
-      0 0 110px 40px rgba(255, 0, 68, 0.4),
-      inset 0 2px 10px rgba(255, 255, 255, 0.8),
-      inset 0 -2px 10px rgba(255, 100, 0, 0.7);
+    transform: scale(0.9);
   }
 }
 
